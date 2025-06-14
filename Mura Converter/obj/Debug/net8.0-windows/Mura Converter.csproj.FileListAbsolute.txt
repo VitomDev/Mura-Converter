@@ -29,3 +29,4 @@ C:\Users\TalonDeAquiles\Mura-Converter\Mura Converter\bin\Debug\net8.0-windows\Y
 C:\Users\TalonDeAquiles\Mura-Converter\Mura Converter\bin\Debug\net8.0-windows\YoutubeExplode.Converter.dll
 C:\Users\TalonDeAquiles\Mura-Converter\Mura Converter\bin\Debug\net8.0-windows\runtimes\browser\lib\net8.0\System.Text.Encodings.Web.dll
 C:\Users\TalonDeAquiles\Mura-Converter\Mura Converter\obj\Debug\net8.0-windows\Mura Con.66CA1443.Up2Date
+C:\Users\TalonDeAquiles\Mura-Converter\Mura Converter\obj\Debug\net8.0-windows\Mura Converter.sourcelink.json

@@ -28,9 +28,15 @@ namespace Mura_Converter
             {
                 StatusText.Text = "Downloading MP3...";
                 var youtube = new YoutubeClient();
-                string fileName = $"yt_{DateTime.Now:yyyyMMddHHmmss}.mp3";
-                await youtube.Videos.DownloadAsync(url, fileName);
-                StatusText.Text = $"Done! Saved as {fileName}";
+                string folder = System.IO.Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.MyMusic),
+                    "MuraDownloads"
+                );
+                System.IO.Directory.CreateDirectory(folder);
+
+                string filePath = System.IO.Path.Combine(folder, $"yt_{DateTime.Now:yyyyMMddHHmmss}.mp3");
+                await youtube.Videos.DownloadAsync(url, filePath);
+                StatusText.Text = $"Done! Saved as {filePath}";
             }
             catch (Exception ex)
             {
@@ -51,9 +57,16 @@ namespace Mura_Converter
             {
                 StatusText.Text = "Downloading MP4...";
                 var youtube = new YoutubeClient();
-                string fileName = $"yt_{DateTime.Now:yyyyMMddHHmmss}.mp4";
-                await youtube.Videos.DownloadAsync(url, fileName);
-                StatusText.Text = $"Done! Saved as {fileName}";
+                string folder = System.IO.Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.MyMusic),
+                    "MuraDownloads"
+                );
+                System.IO.Directory.CreateDirectory(folder);
+
+                string filePath = System.IO.Path.Combine(folder, $"yt_{DateTime.Now:yyyyMMddHHmmss}.mp4");
+                await youtube.Videos.DownloadAsync(url, filePath);
+                StatusText.Text = $"Done! Saved as {filePath}";
+
             }
             catch (Exception ex)
             {

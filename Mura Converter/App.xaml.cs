@@ -37,15 +37,15 @@ namespace Mura_Converter
             try
             {
                 var youtube = new YoutubeClient();
-                string fileName = $"yt_{DateTime.Now:yyyyMMddHHmmss}";
+                string folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyMusic), "MuraDownloads");
+                Directory.CreateDirectory(folder); // Crea la carpeta si no existe
 
-                if (format == "mp3")
+                string filePath = Path.Combine(folder, $"yt_{DateTime.Now:yyyyMMddHHmmss}.{format}");
+
+                if (format == "mp3" || format == "mp4")
                 {
-                    await youtube.Videos.DownloadAsync(url, $"{fileName}.mp3");
-                }
-                else if (format == "mp4")
-                {
-                    await youtube.Videos.DownloadAsync(url, $"{fileName}.mp4");
+                    await youtube.Videos.DownloadAsync(url, filePath);
+                    Console.WriteLine($"Archivo guardado en: {filePath}");
                 }
                 else
                 {
