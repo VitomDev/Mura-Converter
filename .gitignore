@@ -1,0 +1,14 @@
+# Visual Studio build folders
+bin/
+obj/
+
+# User-specific files
+*.user
+*.suo
+
+# Ignore VS settings, compiled files, cache
+.vs/
+*.exe
+*.pdb
+*.cache
+*.log
