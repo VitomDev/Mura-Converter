@@ -51,9 +51,19 @@ For now, development is paused while I focus on other projects.
 
 ---
 
+## 📲 Contact
+
+Feel free to reach out or follow me:
+
+- 🐙 GitHub: [@VitomDev](https://github.com/VitomDev)
+- 🐦 Twitter/X: [@VitomDev](https://twitter.com/VitomDev)
+- 🎮 Twitch: [@Vitom](https://www.twitch.tv/VitomDev)
+- 💼 LinkedIn: [Víctor Escós](https://www.linkedin.com/in/Victor-Escos-Batalla)
+
+---
+
 ## 🧑‍💻 Author
 
-**Víctor Escós**  
-[VitomDev GitHub](https://github.com/VitomDev)
+**Víctor Escós Batalla**  
 
 
