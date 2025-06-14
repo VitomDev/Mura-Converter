@@ -1,4 +1,5 @@
 # 🎧 Mura Converter
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 A desktop application to convert YouTube videos to MP3 or MP4, built with C# and WPF.  
 It allows pasting a YouTube URL and easily downloading the video or just the audio.
