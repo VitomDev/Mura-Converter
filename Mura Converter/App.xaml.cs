@@ -38,7 +38,7 @@ namespace Mura_Converter
             {
                 var youtube = new YoutubeClient();
                 string folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyMusic), "MuraDownloads");
-                Directory.CreateDirectory(folder); // Crea la carpeta si no existe
+                Directory.CreateDirectory(folder);
 
                 string filePath = Path.Combine(folder, $"yt_{DateTime.Now:yyyyMMddHHmmss}.{format}");
 

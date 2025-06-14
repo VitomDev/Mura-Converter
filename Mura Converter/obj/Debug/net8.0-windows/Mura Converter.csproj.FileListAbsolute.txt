@@ -6,7 +6,6 @@ C:\Users\TalonDeAquiles\Mura-Converter\Mura Converter\bin\Debug\net8.0-windows\M
 C:\Users\TalonDeAquiles\Mura-Converter\Mura Converter\obj\Debug\net8.0-windows\MainWindow.g.cs
 C:\Users\TalonDeAquiles\Mura-Converter\Mura Converter\obj\Debug\net8.0-windows\App.g.cs
 C:\Users\TalonDeAquiles\Mura-Converter\Mura Converter\obj\Debug\net8.0-windows\Mura Converter_MarkupCompile.cache
-C:\Users\TalonDeAquiles\Mura-Converter\Mura Converter\obj\Debug\net8.0-windows\Mura Converter_MarkupCompile.lref
 C:\Users\TalonDeAquiles\Mura-Converter\Mura Converter\obj\Debug\net8.0-windows\MainWindow.baml
 C:\Users\TalonDeAquiles\Mura-Converter\Mura Converter\obj\Debug\net8.0-windows\Mura Converter.g.resources
 C:\Users\TalonDeAquiles\Mura-Converter\Mura Converter\obj\Debug\net8.0-windows\Mura Converter.GeneratedMSBuildEditorConfig.editorconfig
@@ -30,3 +29,6 @@ C:\Users\TalonDeAquiles\Mura-Converter\Mura Converter\bin\Debug\net8.0-windows\Y
 C:\Users\TalonDeAquiles\Mura-Converter\Mura Converter\bin\Debug\net8.0-windows\runtimes\browser\lib\net8.0\System.Text.Encodings.Web.dll
 C:\Users\TalonDeAquiles\Mura-Converter\Mura Converter\obj\Debug\net8.0-windows\Mura Con.66CA1443.Up2Date
 C:\Users\TalonDeAquiles\Mura-Converter\Mura Converter\obj\Debug\net8.0-windows\Mura Converter.sourcelink.json
+C:\Users\TalonDeAquiles\Mura-Converter\Mura Converter\obj\Debug\net8.0-windows\Mura Converter_MarkupCompile.lref
+C:\Users\TalonDeAquiles\Mura-Converter\Mura Converter\bin\Debug\net8.0-windows\ffmpeg\ffmpeg.exe
+C:\Users\TalonDeAquiles\Mura-Converter\Mura Converter\obj\Debug\net8.0-windows\Mura Converter_Content.g.cs

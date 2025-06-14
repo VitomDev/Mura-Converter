@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Mura Converter")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+9969024c6afd84209eefc17d68e8a1c178aa3b89")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+1c2595cb0ca440c138ee75cf536276122fb3bf84")]
 [assembly: System.Reflection.AssemblyProductAttribute("Mura Converter")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Mura Converter")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

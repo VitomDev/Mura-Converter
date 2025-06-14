@@ -7,16 +7,20 @@
       "RelativeMoniker": "D:0:0:{D805EEC6-E0C9-4FA3-B5A6-362ABF212E36}|Mura Converter.csproj|solutionrelative:mainwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{D805EEC6-E0C9-4FA3-B5A6-362ABF212E36}|Mura Converter.csproj|c:\\users\\talondeaquiles\\mura-converter\\mura converter\\app.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{D805EEC6-E0C9-4FA3-B5A6-362ABF212E36}|Mura Converter.csproj|solutionrelative:app.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{D805EEC6-E0C9-4FA3-B5A6-362ABF212E36}|Mura Converter.csproj|c:\\users\\talondeaquiles\\mura-converter\\mura converter\\mainwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
       "RelativeMoniker": "D:0:0:{D805EEC6-E0C9-4FA3-B5A6-362ABF212E36}|Mura Converter.csproj|solutionrelative:mainwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
     },
     {
+      "AbsoluteMoniker": "D:0:0:{D805EEC6-E0C9-4FA3-B5A6-362ABF212E36}|Mura Converter.csproj|c:\\users\\talondeaquiles\\mura-converter\\mura converter\\app.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D805EEC6-E0C9-4FA3-B5A6-362ABF212E36}|Mura Converter.csproj|solutionrelative:app.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{D805EEC6-E0C9-4FA3-B5A6-362ABF212E36}|Mura Converter.csproj|c:\\users\\talondeaquiles\\mura-converter\\mura converter\\app.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
       "RelativeMoniker": "D:0:0:{D805EEC6-E0C9-4FA3-B5A6-362ABF212E36}|Mura Converter.csproj|solutionrelative:app.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D805EEC6-E0C9-4FA3-B5A6-362ABF212E36}|Mura Converter.csproj|c:\\users\\talondeaquiles\\mura-converter\\mura converter\\mura converter.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
+      "RelativeMoniker": "D:0:0:{D805EEC6-E0C9-4FA3-B5A6-362ABF212E36}|Mura Converter.csproj|solutionrelative:mura converter.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
     }
   ],
   "DocumentGroupContainers": [
@@ -26,7 +30,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 6,
+          "SelectedChildIndex": 7,
           "Children": [
             {
               "$type": "Bookmark",
@@ -42,6 +46,19 @@
             },
             {
               "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "Mura Converter",
+              "DocumentMoniker": "C:\\Users\\TalonDeAquiles\\Mura-Converter\\Mura Converter\\Mura Converter.csproj",
+              "RelativeDocumentMoniker": "Mura Converter.csproj",
+              "ToolTip": "C:\\Users\\TalonDeAquiles\\Mura-Converter\\Mura Converter\\Mura Converter.csproj",
+              "RelativeToolTip": "Mura Converter.csproj",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAB8AAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
+              "WhenOpened": "2025-06-14T12:15:50.846Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
               "DocumentIndex": 3,
               "Title": "App.xaml",
               "DocumentMoniker": "C:\\Users\\TalonDeAquiles\\Mura-Converter\\Mura Converter\\App.xaml",
@@ -54,20 +71,20 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 2,
               "Title": "App.xaml.cs",
               "DocumentMoniker": "C:\\Users\\TalonDeAquiles\\Mura-Converter\\Mura Converter\\App.xaml.cs",
               "RelativeDocumentMoniker": "App.xaml.cs",
               "ToolTip": "C:\\Users\\TalonDeAquiles\\Mura-Converter\\Mura Converter\\App.xaml.cs",
               "RelativeToolTip": "App.xaml.cs",
-              "ViewState": "AgIAABYAAAAAAAAAAAAgwDAAAAARAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA0AAAAfAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-06-14T00:01:17.613Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 1,
               "Title": "MainWindow.xaml",
               "DocumentMoniker": "C:\\Users\\TalonDeAquiles\\Mura-Converter\\Mura Converter\\MainWindow.xaml",
               "RelativeDocumentMoniker": "MainWindow.xaml",
@@ -85,7 +102,7 @@
               "RelativeDocumentMoniker": "MainWindow.xaml.cs",
               "ToolTip": "C:\\Users\\TalonDeAquiles\\Mura-Converter\\Mura Converter\\MainWindow.xaml.cs",
               "RelativeToolTip": "MainWindow.xaml.cs",
-              "ViewState": "AgIAACQAAAAAAAAAAAAowD0AAAAjAAAAAAAAAA==",
+              "ViewState": "AgIAAGsAAAAAAAAAAAAhwHwAAABOAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-06-13T23:54:44.948Z",
               "EditorCaption": ""
