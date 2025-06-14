@@ -1,14 +1,61 @@
-# Visual Studio build folders
+########################################
+# Build artifacts
+########################################
 bin/
 obj/
-
-# User-specific files
-*.user
-*.suo
-
-# Ignore VS settings, compiled files, cache
-.vs/
+*.dll
 *.exe
 *.pdb
 *.cache
+
+########################################
+# User-specific files
+########################################
+*.user
+*.userosscache
+*.suo
+*.vsp
+*.vspscc
+*.vssscc
+*.orig
+
+########################################
+# Visual Studio config
+########################################
+.vs/
+*.sln.docstates
+
+########################################
+# Rider config (por si usas JetBrains)
+########################################
+.idea/
+*.sln.iml
+
+########################################
+# Logs y archivos temporales
+########################################
 *.log
+*.tmp
+
+########################################
+# OS junk files
+########################################
+.DS_Store
+Thumbs.db
+desktop.ini
+
+########################################
+# NuGet Packages
+########################################
+*.nupkg
+# Optional NuGet packages folder
+packages/
+# Paket dependency manager
+.paket/
+paket-files/
+
+########################################
+# FFmpeg - permitido
+########################################
+# No ignores the /ffmpeg folder — lo necesitas
+!ffmpeg/
