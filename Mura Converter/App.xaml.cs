@@ -1,10 +1,8 @@
-﻿using System;
-using System.Diagnostics;
+using System;
 using System.IO;
+using System.Media;
 using System.Threading.Tasks;
 using System.Windows;
-using YoutubeExplode;
-using YoutubeExplode.Converter;
 
 namespace Mura_Converter
 {
@@ -19,42 +17,62 @@ namespace Mura_Converter
 
             if (e.Args.Length == 2)
             {
-                string format = e.Args[0];
-                string url = e.Args[1];
+                var formatArg = e.Args[0];
+                var url = e.Args[1];
 
-                await DownloadFromArgsAsync(format, url);
+                if (!TryParseFormat(formatArg, out var format))
+                {
+                    MessageBox.Show("Formato no válido. Usa 'mp3' o 'mp4'.");
+                    Current.Shutdown();
+                    return;
+                }
+
+                var success = await DownloadFromArgsAsync(format, url);
+                if (success)
+                    MessageBox.Show("Descarga completada.");
                 Current.Shutdown();
+                return;
             }
-            else
-            {
-                var mainWindow = new MainWindow();
-                mainWindow.Show();
-            }
+
+            var mainWindow = new MainWindow();
+            mainWindow.Show();
         }
 
-        private async Task DownloadFromArgsAsync(string format, string url)
+        private static bool TryParseFormat(string value, out DownloadFormat format)
+        {
+            if (string.Equals(value, "mp3", StringComparison.OrdinalIgnoreCase))
+            {
+                format = DownloadFormat.Mp3;
+                return true;
+            }
+
+            if (string.Equals(value, "mp4", StringComparison.OrdinalIgnoreCase))
+            {
+                format = DownloadFormat.Mp4;
+                return true;
+            }
+
+            format = default;
+            return false;
+        }
+
+        private static async Task<bool> DownloadFromArgsAsync(DownloadFormat format, string url)
         {
             try
             {
-                var youtube = new YoutubeClient();
-                string folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyMusic), "MuraDownloads");
-                Directory.CreateDirectory(folder);
+                if (!YouTubeDownloadService.IsValidYouTubeUrl(url))
+                    throw new ArgumentException("La URL de YouTube no es válida.");
 
-                string filePath = Path.Combine(folder, $"yt_{DateTime.Now:yyyyMMddHHmmss}.{format}");
-
-                if (format == "mp3" || format == "mp4")
-                {
-                    await youtube.Videos.DownloadAsync(url, filePath);
-                    Console.WriteLine($"Archivo guardado en: {filePath}");
-                }
-                else
-                {
-                    Console.WriteLine("Formato no soportado: usa 'mp3' o 'mp4'");
-                }
+                var folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyMusic), "MuraDownloads");
+                await YouTubeDownloadService.DownloadAsync(url, format, folder);
+                SystemSounds.Asterisk.Play();
+                return true;
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Error al convertir: " + ex.Message);
+                MessageBox.Show("Error al convertir: " + ex.Message);
+                SystemSounds.Hand.Play();
+                return false;
             }
         }
     }
