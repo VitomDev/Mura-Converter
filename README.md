@@ -19,9 +19,11 @@ I do **not endorse** or take **any responsibility** for how others use this tool
 - Auto-detect URL from clipboard
 - Downloads with bundled `ffmpeg` (no installation needed)
 - Video title-based filenames with timestamp
+- Quality and format selector (mp4 and webm)
 - Clean and minimalist UI
 - Prevents overwriting existing files
 - Status feedback and sound notification on finish
+
 
 ---
 
