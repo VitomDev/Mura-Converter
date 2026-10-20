@@ -59,3 +59,8 @@ paket-files/
 ########################################
 # No ignores the /ffmpeg folder — lo necesitas
 !ffmpeg/
+
+# Bundled tools (fetched by build.ps1) and build output
+Mura Converter/tools/
+publish/
+dist/

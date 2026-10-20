@@ -1,30 +1,31 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net8.0-windows</TargetFramework>
+    <TargetFramework>net10.0-windows</TargetFramework>
     <RootNamespace>Mura_Converter</RootNamespace>
+    <AssemblyName>MuraConverter</AssemblyName>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
+    <ApplicationIcon>appicon.ico</ApplicationIcon>
+    <Version>2.0.0</Version>
+    <Product>Mura Converter</Product>
+    <Authors>Víctor Escós Batalla</Authors>
+
+    <!-- Self-contained so the installer works on any Windows 10/11 PC without installing .NET. -->
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <SelfContained>true</SelfContained>
+    <PublishReadyToRun>true</PublishReadyToRun>
+    <TieredPGO>true</TieredPGO>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <DebugType>none</DebugType>
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="ffmpeg\ffmpeg.exe" />
+    <!-- yt-dlp.exe, ffmpeg.exe and ffprobe.exe (fetched by build.ps1, not tracked in git). -->
+    <None Include="tools\*.exe" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Resource Include="appicon.ico" />
   </ItemGroup>
-
-  <ItemGroup>
-    <Content Include="ffmpeg\ffmpeg.exe">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="YoutubeExplode" Version="6.5.7" />
-  </ItemGroup>
-	
-  <PropertyGroup>
-	<ApplicationIcon>appicon.ico</ApplicationIcon>
-  </PropertyGroup>
 
 </Project>

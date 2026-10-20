@@ -15,32 +15,34 @@ I do **not endorse** or take **any responsibility** for how others use this tool
 
 ## 🚀 Features
 
-- Convert to MP3 and MP4
-- Auto-detect URL from clipboard
-- Downloads with bundled `ffmpeg` (no installation needed)
-- Video title-based filenames with timestamp
-- Quality and format selector (mp4 and webm)
-- Clean and minimalist UI
-- Prevents overwriting existing files
-- Status feedback and sound notification on finish
-
-
----
-
-## 📦 Requirements
-
-- Windows 10 or later  
-- .NET 6.0 or higher  
-- Internet connection
+- MP4 (up to 4K) or MP3 (128–320 kbps) in one click
+- Auto-pastes YouTube links from the clipboard (on launch and when the window gets focus)
+- Real progress bar with size, speed and ETA; cancel at any time
+- Powered by bundled [yt-dlp](https://github.com/yt-dlp/yt-dlp) + FFmpeg, auto-updated daily so it keeps working when YouTube changes
+- MP4 prefers H.264 + AAC so files play everywhere; merged without re-encoding (fast)
+- MP3 with embedded title/artist and cover art
+- Choose and remember the output folder (default `Downloads\Mura`)
+- Drag & drop links, Enter to download
 
 ---
 
-## 🔧 Build Instructions
+## 📦 Install
 
-1. Clone the repository
-2. Open the project in Visual Studio
-3. Restore NuGet packages
-4. Build and run
+Run `MuraConverter-Setup-x.y.z.exe`. Per-user install, no admin rights and no .NET needed.
+
+Optional: installing [Deno](https://deno.com) (`winget install DenoLand.Deno`) lets yt-dlp see every YouTube format; it is picked up automatically.
+
+---
+
+## 🔧 Build
+
+Requirements: .NET 10 SDK and Inno Setup 6 (`winget install JRSoftware.InnoSetup`).
+
+```powershell
+.\build.ps1
+```
+
+It downloads yt-dlp and FFmpeg into `Mura Converter/tools/` if missing, publishes the app and writes the installer to `dist/`.
 
 ---
 
