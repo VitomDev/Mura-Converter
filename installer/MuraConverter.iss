@@ -1,6 +1,6 @@
-; Inno Setup script for Mura Converter. Built by build.ps1.
+﻿; Inno Setup script for Mura Converter. Built by build.ps1.
 #define AppName "Mura Converter"
-#define AppVersion "2.0.0"
+#define AppVersion "2.1.0"
 #define AppExe "MuraConverter.exe"
 
 [Setup]
@@ -32,6 +32,16 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"
+Name: "contextmenu"; Description: "Añadir ""Descargar enlace copiado con Mura"" al menú del botón derecho del Explorador"; GroupDescription: "{cm:AdditionalIcons}"
+
+[Registry]
+; Right-click on a folder background (or the desktop) / on a folder: downloads the copied link into that folder.
+Root: HKCU; Subkey: "Software\Classes\Directory\Background\shell\MuraConverter"; ValueType: string; ValueName: ""; ValueData: "Descargar enlace copiado con Mura"; Flags: uninsdeletekey; Tasks: contextmenu
+Root: HKCU; Subkey: "Software\Classes\Directory\Background\shell\MuraConverter"; ValueType: string; ValueName: "Icon"; ValueData: "{app}\{#AppExe}"; Tasks: contextmenu
+Root: HKCU; Subkey: "Software\Classes\Directory\Background\shell\MuraConverter\command"; ValueType: string; ValueName: ""; ValueData: """{app}\{#AppExe}"" --clipboard --dir ""%V"""; Tasks: contextmenu
+Root: HKCU; Subkey: "Software\Classes\Directory\shell\MuraConverter"; ValueType: string; ValueName: ""; ValueData: "Descargar enlace copiado aquí con Mura"; Flags: uninsdeletekey; Tasks: contextmenu
+Root: HKCU; Subkey: "Software\Classes\Directory\shell\MuraConverter"; ValueType: string; ValueName: "Icon"; ValueData: "{app}\{#AppExe}"; Tasks: contextmenu
+Root: HKCU; Subkey: "Software\Classes\Directory\shell\MuraConverter\command"; ValueType: string; ValueName: ""; ValueData: """{app}\{#AppExe}"" --clipboard --dir ""%1"""; Tasks: contextmenu
 
 [Files]
 Source: "..\publish\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs

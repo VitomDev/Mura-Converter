@@ -13,7 +13,8 @@ internal sealed class AppSettings
     public string OutputFolder { get; set; } =
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads", "Mura");
 
-    public DownloadFormat Format { get; set; } = DownloadFormat.Mp4;
+    public MediaKind Kind { get; set; } = MediaKind.Video;
+    public AudioFormat AudioFormat { get; set; } = AudioFormat.Mp3;
     public int VideoHeight { get; set; } = 1080;
     public int AudioBitrate { get; set; } = 320;
     public DateTime LastUpdateCheck { get; set; } = DateTime.MinValue;
@@ -27,7 +28,7 @@ internal sealed class AppSettings
         }
         catch
         {
-            // Corrupt settings: fall back to defaults.
+            // Corrupt or old-format settings: fall back to defaults.
         }
 
         return new AppSettings();

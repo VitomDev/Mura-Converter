@@ -1,16 +1,14 @@
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Media;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media.Imaging;
 using Microsoft.Win32;
 
 namespace Mura_Converter;
-
-internal sealed record QualityOption(int Value, string Label)
-{
-    public override string ToString() => Label;
-}
 
 public partial class MainWindow : Window
 {
@@ -33,35 +31,49 @@ public partial class MainWindow : Window
         new(128, "128 kbps"),
     };
 
-    private readonly AppSettings settings = AppSettings.Load();
-    private CancellationTokenSource? downloadCts;
-    private Task? updateTask;
-    private string? lastClipboardUrl;
-    private string? lastFilePath;
+    private static readonly QualityOption[] LosslessQuality = { new(0, "Sin pérdida") };
 
-    internal MainWindow(string? initialUrl = null, DownloadFormat? initialFormat = null)
+    private static readonly AudioFormat[] AudioFormats = Enum.GetValues<AudioFormat>();
+
+    private readonly AppSettings settings = AppSettings.Load();
+    private readonly ObservableCollection<QueueItem> queue = new();
+    private readonly Notifier notifier;
+    private Task? updateTask;
+    private bool processing;
+    private bool quietMode;
+    private bool loadingUi = true;
+    private string? lastClipboardUrl;
+    private CancellationTokenSource? previewCts;
+    private (string Url, MediaInfo Info)? preview;
+
+    internal MainWindow(LaunchArgs launch)
     {
         InitializeComponent();
+        notifier = new Notifier(RestoreWindow);
 
-        if (initialFormat.HasValue)
-            settings.Format = initialFormat.Value;
-
-        Mp4Option.IsChecked = settings.Format == DownloadFormat.Mp4;
-        Mp3Option.IsChecked = settings.Format == DownloadFormat.Mp3;
-        RefreshQualityOptions();
+        QueueList.ItemsSource = queue;
+        AudioFormatSelector.ItemsSource = AudioFormats.Select(f => f.ToString().ToUpperInvariant()).ToArray();
+        AudioFormatSelector.SelectedIndex = Array.IndexOf(AudioFormats, settings.AudioFormat);
+        VideoOption.IsChecked = settings.Kind == MediaKind.Video;
+        AudioOption.IsChecked = settings.Kind == MediaKind.Audio;
+        loadingUi = false;
+        RefreshOptions();
         RefreshFolderLabel();
+        RefreshQueuePanel();
 
-        if (initialUrl != null)
+        // Context-menu / command-line downloads run minimized and close by themselves when done.
+        if (launch.IsQuickDownload)
         {
-            UrlBox.Text = initialUrl;
-            lastClipboardUrl = initialUrl;
+            quietMode = true;
+            ShowActivated = false;
+            WindowState = WindowState.Minimized;
         }
 
         Loaded += (_, _) =>
         {
-            UrlBox.Focus();
-            if (initialUrl != null && initialFormat.HasValue)
-                _ = StartDownloadAsync();
+            if (!quietMode)
+                UrlBox.Focus();
+            HandleLaunch(launch, fromOtherInstance: false);
         };
 
         // yt-dlp must track YouTube's changes; refresh it at most once a day, silently in the background.
@@ -75,78 +87,100 @@ public partial class MainWindow : Window
         }
     }
 
-    private DownloadFormat SelectedFormat => Mp3Option.IsChecked == true ? DownloadFormat.Mp3 : DownloadFormat.Mp4;
+    private MediaKind SelectedKind => AudioOption.IsChecked == true ? MediaKind.Audio : MediaKind.Video;
 
-    private void Window_Activated(object? sender, EventArgs e) => TryPasteFromClipboard(force: false);
+    private AudioFormat SelectedAudioFormat =>
+        AudioFormatSelector.SelectedIndex >= 0 ? AudioFormats[AudioFormatSelector.SelectedIndex] : AudioFormat.Mp3;
 
-    private void TryPasteFromClipboard(bool force)
+    // ---------- Launch arguments (command line, Explorer context menu, second instance) ----------
+
+    internal void HandleLaunch(LaunchArgs launch, bool fromOtherInstance)
     {
-        if (downloadCts != null)
+        var url = launch.Url ?? (launch.FromClipboard ? ReadClipboardUrl(anyUrl: true) : null);
+
+        if (launch.IsQuickDownload)
+        {
+            if (url == null)
+            {
+                notifier.Show("Mura Converter", "No hay ningún enlace copiado en el portapapeles.", isError: true);
+                if (quietMode && !processing)
+                    _ = CloseSoonAsync();
+                return;
+            }
+
+            lastClipboardUrl = url;
+            Enqueue(BuildRequest(url, launch.Folder ?? settings.OutputFolder, wholePlaylist: false, null, null, launch.Kind), url);
+            if (fromOtherInstance && !quietMode)
+                notifier.Show("Añadido a la cola", url);
+            else if (quietMode)
+                notifier.Show("Descargando con Mura…", url);
+            return;
+        }
+
+        if (url != null)
+        {
+            lastClipboardUrl = url;
+            UrlBox.Text = url;
+        }
+
+        if (fromOtherInstance)
+            RestoreWindow();
+    }
+
+    private void RestoreWindow()
+    {
+        quietMode = false;
+        Show();
+        if (WindowState == WindowState.Minimized)
+            WindowState = WindowState.Normal;
+        Activate();
+    }
+
+    private void Window_StateChanged(object? sender, EventArgs e)
+    {
+        if (WindowState == WindowState.Normal)
+            quietMode = false;
+    }
+
+    // ---------- Clipboard, drag & drop ----------
+
+    private void Window_Activated(object? sender, EventArgs e)
+    {
+        var text = ReadClipboardUrl(anyUrl: false);
+        if (text == null || text == lastClipboardUrl || text == UrlBox.Text.Trim())
             return;
 
-        string text;
+        lastClipboardUrl = text;
+        UrlBox.Text = text;
+        UrlBox.CaretIndex = text.Length;
+    }
+
+    private static string? ReadClipboardUrl(bool anyUrl)
+    {
         try
         {
-            text = Clipboard.GetText().Trim();
+            var text = Clipboard.GetText().Trim();
+            return anyUrl ? (YtDlpService.LooksLikeUrl(text) ? text : null)
+                          : (YtDlpService.IsKnownSiteUrl(text) ? text : null);
         }
         catch
         {
-            return;
+            return null;
         }
+    }
 
-        // Auto-paste only fresh YouTube links, so we never overwrite something the user typed.
-        if (!force && (!YtDlpService.IsYouTubeUrl(text) || text == lastClipboardUrl))
-            return;
-        if (force && !YtDlpService.LooksLikeUrl(text))
+    private void Paste_Click(object sender, RoutedEventArgs e)
+    {
+        var text = ReadClipboardUrl(anyUrl: true);
+        if (text == null)
         {
-            SetStatus("El portapapeles no contiene un enlace.", null);
+            SetHint("El portapapeles no contiene un enlace.");
             return;
         }
 
         lastClipboardUrl = text;
         UrlBox.Text = text;
         UrlBox.CaretIndex = text.Length;
-        SetStatus("Enlace pegado. Pulsa Descargar o Enter.", null);
-    }
-
-    private void Paste_Click(object sender, RoutedEventArgs e) => TryPasteFromClipboard(force: true);
-
-    private void Format_Changed(object sender, RoutedEventArgs e)
-    {
-        if (!IsInitialized || QualitySelector == null)
-            return;
-        settings.Format = SelectedFormat;
-        RefreshQualityOptions();
-        settings.Save();
-    }
-
-    private void RefreshQualityOptions()
-    {
-        var isMp3 = SelectedFormat == DownloadFormat.Mp3;
-        var options = isMp3 ? AudioQualities : VideoQualities;
-        var current = isMp3 ? settings.AudioBitrate : settings.VideoHeight;
-
-        QualitySelector.ItemsSource = options;
-        QualitySelector.SelectedItem = options.FirstOrDefault(o => o.Value == current) ?? options[0];
-        QualityLabel.Text = isMp3 ? "Calidad de audio" : "Calidad de vídeo (máx.)";
-    }
-
-    private void Quality_Changed(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
-    {
-        if (QualitySelector.SelectedItem is not QualityOption option)
-            return;
-
-        if (SelectedFormat == DownloadFormat.Mp3)
-            settings.AudioBitrate = option.Value;
-        else
-            settings.VideoHeight = option.Value;
-        settings.Save();
-    }
-
-    private void UrlBox_KeyDown(object sender, KeyEventArgs e)
-    {
-        if (e.Key == Key.Enter)
-            _ = StartDownloadAsync();
     }
 
     private void Window_DragOver(object sender, DragEventArgs e)
@@ -161,111 +195,353 @@ public partial class MainWindow : Window
             UrlBox.Text = text.Trim();
     }
 
-    private void Download_Click(object sender, RoutedEventArgs e)
+    private void UrlBox_KeyDown(object sender, KeyEventArgs e)
     {
-        if (downloadCts != null)
-            downloadCts.Cancel();
-        else
-            _ = StartDownloadAsync();
+        if (e.Key == Key.Enter)
+            AddCurrentToQueue();
     }
 
-    private async Task StartDownloadAsync()
+    // ---------- Preview ----------
+
+    private async void UrlBox_TextChanged(object sender, TextChangedEventArgs e)
     {
-        if (downloadCts != null)
-            return;
+        previewCts?.Cancel();
+        previewCts = null;
+        SetHint(null);
 
         var url = UrlBox.Text.Trim();
         if (!YtDlpService.LooksLikeUrl(url))
         {
-            SetStatus("Pega un enlace válido.", null);
+            preview = null;
+            PreviewCard.Visibility = Visibility.Collapsed;
+            return;
+        }
+
+        if (preview?.Url == url)
+            return;
+
+        var cts = new CancellationTokenSource();
+        previewCts = cts;
+        preview = null;
+        PreviewCard.Visibility = Visibility.Visible;
+        PreviewTitle.Text = "Cargando información…";
+        PreviewMeta.Text = "";
+        PreviewImage.Source = null;
+        PlaylistOption.Visibility = Visibility.Collapsed;
+        PlaylistOption.IsChecked = false;
+
+        try
+        {
+            await Task.Delay(350, cts.Token);
+            var info = await YtDlpService.GetInfoAsync(url, cts.Token);
+            if (cts.IsCancellationRequested)
+                return;
+
+            preview = (url, info);
+            PreviewTitle.Text = info.Title;
+            PreviewMeta.Text = string.Join("  ·  ", new[]
+            {
+                info.Uploader,
+                info.Duration.HasValue ? YtDlpService.FormatDuration(info.Duration.Value) : null,
+            }.Where(s => !string.IsNullOrEmpty(s)));
+
+            if (info.IsPlaylist)
+            {
+                PlaylistOption.Content = info.PlaylistCount.HasValue
+                    ? $"Descargar la lista completa ({info.PlaylistCount} elementos)"
+                    : "Descargar la lista completa";
+                PlaylistOption.Visibility = Visibility.Visible;
+                // A bare playlist link has no single video to fall back to.
+                PlaylistOption.IsChecked = info.Duration == null;
+            }
+
+            if (info.ThumbnailUrl != null)
+            {
+                var image = new BitmapImage();
+                image.BeginInit();
+                image.UriSource = new Uri(info.ThumbnailUrl);
+                image.DecodePixelWidth = 192;
+                image.CacheOption = BitmapCacheOption.OnLoad;
+                image.EndInit();
+                PreviewImage.Source = image;
+            }
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        catch (Exception ex)
+        {
+            if (cts.IsCancellationRequested)
+                return;
+            PreviewTitle.Text = "No se pudo leer el enlace";
+            PreviewMeta.Text = FirstLine(ex.Message);
+        }
+    }
+
+    // ---------- Options ----------
+
+    private void Kind_Changed(object sender, RoutedEventArgs e)
+    {
+        if (loadingUi)
+            return;
+        settings.Kind = SelectedKind;
+        settings.Save();
+        RefreshOptions();
+    }
+
+    private void AudioFormat_Changed(object sender, SelectionChangedEventArgs e)
+    {
+        if (loadingUi)
+            return;
+        settings.AudioFormat = SelectedAudioFormat;
+        settings.Save();
+        RefreshOptions();
+    }
+
+    private void RefreshOptions()
+    {
+        var isAudio = SelectedKind == MediaKind.Audio;
+        AudioFormatPanel.Visibility = isAudio ? Visibility.Visible : Visibility.Collapsed;
+
+        QualityOption[] options;
+        int current;
+        if (!isAudio)
+        {
+            options = VideoQualities;
+            current = settings.VideoHeight;
+            QualityLabel.Text = "Calidad (máx.)";
+        }
+        else if (SelectedAudioFormat == AudioFormat.Wav)
+        {
+            options = LosslessQuality;
+            current = 0;
+            QualityLabel.Text = "Calidad";
+        }
+        else
+        {
+            options = AudioQualities;
+            current = settings.AudioBitrate;
+            QualityLabel.Text = "Calidad";
+        }
+
+        loadingUi = true;
+        QualitySelector.ItemsSource = options;
+        QualitySelector.SelectedItem = options.FirstOrDefault(o => o.Value == current) ?? options[0];
+        QualitySelector.IsEnabled = options.Length > 1;
+        loadingUi = false;
+    }
+
+    private void Quality_Changed(object sender, SelectionChangedEventArgs e)
+    {
+        if (loadingUi || QualitySelector.SelectedItem is not QualityOption option || option.Value == 0 && SelectedKind == MediaKind.Audio)
+            return;
+
+        if (SelectedKind == MediaKind.Audio)
+            settings.AudioBitrate = option.Value;
+        else
+            settings.VideoHeight = option.Value;
+        settings.Save();
+    }
+
+    private void Trim_Changed(object sender, RoutedEventArgs e)
+    {
+        TrimPanel.Visibility = TrimOption.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
+        if (TrimOption.IsChecked == true)
+            TrimStartBox.Focus();
+    }
+
+    // ---------- Queue ----------
+
+    private void Download_Click(object sender, RoutedEventArgs e) => AddCurrentToQueue();
+
+    private void AddCurrentToQueue()
+    {
+        var url = UrlBox.Text.Trim();
+        if (!YtDlpService.LooksLikeUrl(url))
+        {
+            SetHint("Pega un enlace válido.");
             SystemSounds.Hand.Play();
             return;
         }
 
-        var cts = new CancellationTokenSource();
-        downloadCts = cts;
-        SetBusy(true);
-        SetStatus("Preparando…", null);
-        Progress.IsIndeterminate = true;
-        lastFilePath = null;
-        ShowFileButton.Visibility = Visibility.Collapsed;
-
-        var progress = new Progress<DownloadProgress>(p =>
+        TimeSpan? start = null, end = null;
+        if (TrimOption.IsChecked == true)
         {
-            if (cts.IsCancellationRequested)
+            if (!YtDlpService.TryParseTime(TrimStartBox.Text, out start) || !YtDlpService.TryParseTime(TrimEndBox.Text, out end))
+            {
+                SetHint("Tiempo no válido. Usa por ejemplo 1:20 o 1:02:30.");
                 return;
-            Progress.IsIndeterminate = p.Percent == null;
-            if (p.Percent.HasValue)
-                Progress.Value = p.Percent.Value;
-            var head = p.Percent.HasValue ? $"{p.Stage}  {p.Percent.Value:0}%" : p.Stage + "…";
-            SetStatus(head, p.Detail);
-        });
+            }
+            if (start.HasValue && end.HasValue && end <= start)
+            {
+                SetHint("El final del recorte debe ser posterior al inicio.");
+                return;
+            }
+        }
+
+        var info = preview?.Url == url ? preview.Value.Info : null;
+        var wholePlaylist = PlaylistOption.Visibility == Visibility.Visible && PlaylistOption.IsChecked == true;
+        var title = wholePlaylist ? info?.PlaylistTitle ?? info?.Title : info?.Title;
+
+        Enqueue(BuildRequest(url, settings.OutputFolder, wholePlaylist, start, end), title ?? url);
+
+        // Ready for the next link.
+        lastClipboardUrl = url;
+        UrlBox.Clear();
+        TrimOption.IsChecked = false;
+        TrimStartBox.Clear();
+        TrimEndBox.Clear();
+        UrlBox.Focus();
+    }
+
+    private DownloadRequest BuildRequest(
+        string url, string folder, bool wholePlaylist, TimeSpan? start, TimeSpan? end, MediaKind? kindOverride = null)
+    {
+        // "mp3"/"mp4" on the command line only affect that download, not the saved choice.
+        var kind = kindOverride ?? SelectedKind;
+        var audioFormat = kindOverride == MediaKind.Audio ? AudioFormat.Mp3 : SelectedAudioFormat;
+        var quality = kind == MediaKind.Audio ? settings.AudioBitrate : settings.VideoHeight;
+        return new DownloadRequest(url, kind, audioFormat, quality, wholePlaylist, start, end, folder);
+    }
+
+    private void Enqueue(DownloadRequest request, string title)
+    {
+        queue.Add(new QueueItem(request, title));
+        RefreshQueuePanel();
+        _ = ProcessQueueAsync();
+    }
+
+    private async Task ProcessQueueAsync()
+    {
+        if (processing)
+            return;
+        processing = true;
 
         try
         {
             // Don't race the self-update replacing yt-dlp.exe.
             if (updateTask is { IsCompleted: false })
             {
-                SetStatus("Actualizando motor de descarga…", null);
+                SetHint("Actualizando el motor de descarga…");
                 await updateTask;
+                SetHint(null);
             }
 
-            var quality = (QualitySelector.SelectedItem as QualityOption)?.Value ?? 0;
-            var format = SelectedFormat;
-            var path = await YtDlpService.DownloadAsync(
-                url,
-                format,
-                videoHeight: format == DownloadFormat.Mp4 ? quality : 0,
-                audioBitrate: format == DownloadFormat.Mp3 ? quality : 320,
-                settings.OutputFolder,
-                progress,
-                cts.Token);
+            while (queue.FirstOrDefault(i => i.State == QueueState.Pending) is { } next)
+                await RunItemAsync(next);
+        }
+        finally
+        {
+            processing = false;
+        }
 
-            lastFilePath = path;
-            Progress.IsIndeterminate = false;
-            Progress.Value = 100;
-            SetStatus("✓ Descarga completada", Path.GetFileName(path));
-            ShowFileButton.Visibility = Visibility.Visible;
+        if (quietMode)
+            _ = CloseSoonAsync();
+    }
+
+    private async Task RunItemAsync(QueueItem item)
+    {
+        item.State = QueueState.Running;
+        item.Status = "Preparando…";
+        item.IsIndeterminate = true;
+
+        var progress = new Progress<DownloadProgress>(p =>
+        {
+            if (item.State != QueueState.Running)
+                return;
+            if (!string.IsNullOrEmpty(p.Title) && !item.Request.WholePlaylist)
+                item.Title = p.Title;
+            item.IsIndeterminate = p.Percent == null;
+            if (p.Percent.HasValue)
+                item.Percent = p.Percent.Value;
+            item.Status = p.Percent.HasValue ? $"{p.Stage}  {p.Percent.Value:0}%" : p.Stage + "…";
+            item.Detail = item.Request.WholePlaylist ? p.Title : p.Detail;
+        });
+
+        try
+        {
+            var path = await YtDlpService.DownloadAsync(item.Request, progress, item.Cancellation.Token);
+            item.FilePath = path;
+            item.State = QueueState.Done;
+            item.IsIndeterminate = false;
+            item.Percent = 100;
+            item.Status = "✓ Completado";
+            item.Detail = item.Request.WholePlaylist ? Path.GetDirectoryName(path) : Path.GetFileName(path);
+            if (!IsActive)
+                notifier.Show("✓ Descarga completada", item.Request.WholePlaylist ? item.Title : Path.GetFileName(path));
             SystemSounds.Asterisk.Play();
         }
         catch (OperationCanceledException)
         {
-            Progress.IsIndeterminate = false;
-            Progress.Value = 0;
-            SetStatus("Descarga cancelada.", null);
+            item.State = QueueState.Canceled;
+            item.IsIndeterminate = false;
+            item.Percent = 0;
+            item.Status = "Cancelada";
+            item.Detail = null;
         }
         catch (Exception ex)
         {
-            Progress.IsIndeterminate = false;
-            Progress.Value = 0;
-            SetStatus("Error", ex.Message);
+            item.State = QueueState.Failed;
+            item.IsIndeterminate = false;
+            item.Percent = 0;
+            item.Status = "Error";
+            item.Detail = FirstLine(ex.Message);
+            if (!IsActive)
+                notifier.Show("Error en la descarga", item.Title, isError: true);
             SystemSounds.Hand.Play();
         }
-        finally
+    }
+
+    private void QueueItemAction_Click(object sender, RoutedEventArgs e)
+    {
+        if ((sender as FrameworkElement)?.DataContext is not QueueItem item)
+            return;
+
+        if (item.State == QueueState.Running)
         {
-            downloadCts = null;
-            cts.Dispose();
-            SetBusy(false);
+            item.Cancellation.Cancel();
         }
+        else if (item.State == QueueState.Pending)
+        {
+            item.State = QueueState.Canceled;
+            queue.Remove(item);
+        }
+        else
+        {
+            queue.Remove(item);
+        }
+
+        RefreshQueuePanel();
     }
 
-    private void SetBusy(bool busy)
+    private void QueueItemShow_Click(object sender, RoutedEventArgs e)
     {
-        DownloadButton.Content = busy ? "Cancelar" : "Descargar";
-        UrlBox.IsEnabled = !busy;
-        PasteButton.IsEnabled = !busy;
-        Mp3Option.IsEnabled = !busy;
-        Mp4Option.IsEnabled = !busy;
-        QualitySelector.IsEnabled = !busy;
-        ChangeFolderButton.IsEnabled = !busy;
+        if ((sender as FrameworkElement)?.DataContext is QueueItem { FilePath: { } path } && File.Exists(path))
+            Process.Start("explorer.exe", $"/select,\"{path}\"");
     }
 
-    private void SetStatus(string head, string? detail)
+    private void ClearFinished_Click(object sender, RoutedEventArgs e)
     {
-        StatusText.Text = head;
-        DetailText.Text = detail ?? "";
-        DetailText.Visibility = string.IsNullOrEmpty(detail) ? Visibility.Collapsed : Visibility.Visible;
+        foreach (var item in queue.Where(i => i.IsFinished).ToList())
+            queue.Remove(item);
+        RefreshQueuePanel();
     }
+
+    private void RefreshQueuePanel()
+    {
+        QueuePanel.Visibility = queue.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        EmptyHint.Visibility = queue.Count > 0 ? Visibility.Collapsed : Visibility.Visible;
+    }
+
+    private async Task CloseSoonAsync()
+    {
+        // Leave time for the last notification, unless the user opened the window meanwhile.
+        await Task.Delay(TimeSpan.FromSeconds(6));
+        if (quietMode && !processing && WindowState == WindowState.Minimized)
+            Close();
+    }
+
+    // ---------- Output folder ----------
 
     private void RefreshFolderLabel()
     {
@@ -295,11 +571,16 @@ public partial class MainWindow : Window
         Process.Start("explorer.exe", $"\"{settings.OutputFolder}\"");
     }
 
-    private void ShowFile_Click(object sender, RoutedEventArgs e)
+    // ---------- Window chrome ----------
+
+    private void SetHint(string? text)
     {
-        if (lastFilePath != null && File.Exists(lastFilePath))
-            Process.Start("explorer.exe", $"/select,\"{lastFilePath}\"");
+        HintText.Text = text ?? "";
+        HintText.Visibility = string.IsNullOrEmpty(text) ? Visibility.Collapsed : Visibility.Visible;
     }
+
+    private static string FirstLine(string text) =>
+        text.Split('\n', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault()?.Trim() ?? text;
 
     private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
@@ -309,9 +590,21 @@ public partial class MainWindow : Window
 
     private void MinimizeWindow_Click(object sender, RoutedEventArgs e) => WindowState = WindowState.Minimized;
 
-    private void CloseWindow_Click(object sender, RoutedEventArgs e)
+    private void CloseWindow_Click(object sender, RoutedEventArgs e) => Close();
+
+    private void Window_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
     {
-        downloadCts?.Cancel();
-        Close();
+        var active = queue.Count(i => i.IsActive);
+        if (active > 0 && !quietMode &&
+            MessageBox.Show(this, $"Hay {active} descarga(s) en curso o en cola. ¿Cerrar y cancelarlas?",
+                "Mura Converter", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
+        {
+            e.Cancel = true;
+            return;
+        }
+
+        foreach (var item in queue.Where(i => i.IsActive))
+            item.Cancellation.Cancel();
+        notifier.Dispose();
     }
 }

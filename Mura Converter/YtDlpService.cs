@@ -2,19 +2,12 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Text;
+using System.Text.Json;
 
 namespace Mura_Converter;
 
-internal enum DownloadFormat
-{
-    Mp3,
-    Mp4
-}
-
-internal sealed record DownloadProgress(string Stage, double? Percent, string? Detail);
-
 /// <summary>
-/// Thin wrapper around the bundled yt-dlp.exe (+ ffmpeg/ffprobe for merging and MP3 encoding).
+/// Thin wrapper around the bundled yt-dlp.exe (+ ffmpeg/ffprobe for merging, cutting and audio encoding).
 /// </summary>
 internal static class YtDlpService
 {
@@ -25,32 +18,91 @@ internal static class YtDlpService
     private static readonly string ToolsDir = Path.Combine(AppContext.BaseDirectory, "tools");
     private static readonly string YtDlpPath = Path.Combine(ToolsDir, "yt-dlp.exe");
 
+    // Sites whose links get auto-pasted from the clipboard. Any other URL can still be pasted by hand.
+    private static readonly string[] KnownHosts =
+    {
+        "youtube.com", "youtu.be", "tiktok.com", "instagram.com", "x.com", "twitter.com", "twitch.tv",
+        "soundcloud.com", "vimeo.com", "facebook.com", "fb.watch", "reddit.com", "dailymotion.com",
+        "bilibili.com", "kick.com", "bandcamp.com",
+    };
+
     public static bool LooksLikeUrl(string? text) =>
         !string.IsNullOrWhiteSpace(text) &&
         Uri.TryCreate(text.Trim(), UriKind.Absolute, out var uri) &&
         (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps);
 
-    public static bool IsYouTubeUrl(string? text) =>
-        LooksLikeUrl(text) &&
-        (text!.Contains("youtube.com", StringComparison.OrdinalIgnoreCase) ||
-         text.Contains("youtu.be", StringComparison.OrdinalIgnoreCase));
+    public static bool IsKnownSiteUrl(string? text)
+    {
+        if (!LooksLikeUrl(text))
+            return false;
+        var host = new Uri(text!.Trim()).Host.ToLowerInvariant();
+        return KnownHosts.Any(h => host == h || host.EndsWith("." + h, StringComparison.Ordinal));
+    }
 
-    /// <summary>Downloads the URL and returns the final file path.</summary>
+    public static bool HasPlaylist(string url) =>
+        url.Contains("list=", StringComparison.OrdinalIgnoreCase) ||
+        url.Contains("/playlist", StringComparison.OrdinalIgnoreCase) ||
+        url.Contains("/sets/", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Fetches title/thumbnail/duration for the preview. For links that carry a playlist, also its size.
+    /// </summary>
+    public static async Task<MediaInfo> GetInfoAsync(string url, CancellationToken cancellationToken)
+    {
+        var single = DumpJsonAsync(new[] { "--no-playlist" }, url, cancellationToken);
+        var list = HasPlaylist(url)
+            // Only the first entry: enough for title and size without paging through the whole list.
+            ? DumpJsonAsync(new[] { "--yes-playlist", "--flat-playlist", "--playlist-end", "1" }, url, cancellationToken)
+            : Task.FromResult<JsonElement?>(null);
+
+        // A pure playlist link fails or returns the playlist itself in "single" mode; that's fine.
+        JsonElement? video = null;
+        try { video = await single; } catch (InvalidOperationException) when (HasPlaylist(url)) { }
+        var playlist = await list;
+
+        if (video == null && playlist == null)
+            throw new InvalidOperationException("No se pudo leer el enlace.");
+
+        string? playlistTitle = null;
+        int? playlistCount = null;
+        var isPlaylist = false;
+        if (playlist is { } p && GetString(p, "_type") == "playlist")
+        {
+            isPlaylist = true;
+            playlistTitle = GetString(p, "title");
+            playlistCount = GetInt(p, "playlist_count");
+        }
+
+        var main = video ?? playlist!.Value;
+        var duration = GetDouble(main, "duration");
+
+        return new MediaInfo(
+            Title: GetString(main, "title") ?? playlistTitle ?? "Sin título",
+            Uploader: GetString(main, "uploader") ?? GetString(main, "channel"),
+            Duration: duration is > 0 ? TimeSpan.FromSeconds(duration.Value) : null,
+            ThumbnailUrl: GetString(main, "thumbnail") ?? FirstThumbnail(main),
+            IsPlaylist: isPlaylist && playlistCount is null or > 1,
+            PlaylistCount: playlistCount,
+            PlaylistTitle: playlistTitle);
+    }
+
+    /// <summary>Runs one queued download and returns the last file written.</summary>
     public static async Task<string> DownloadAsync(
-        string url,
-        DownloadFormat format,
-        int videoHeight,
-        int audioBitrate,
-        string outputFolder,
+        DownloadRequest request,
         IProgress<DownloadProgress>? progress,
         CancellationToken cancellationToken)
     {
         EnsureTools();
-        Directory.CreateDirectory(outputFolder);
+        Directory.CreateDirectory(request.OutputFolder);
+
+        var trimmed = request.TrimStart.HasValue || request.TrimEnd.HasValue;
+        var name = trimmed ? "%(title).140B (recorte).%(ext)s" : "%(title).150B.%(ext)s";
+        var output = request.WholePlaylist ? "%(playlist_title,playlist_id).80B/%(playlist_index)03d - " + name : name;
 
         var args = new List<string>
         {
-            "--no-playlist",
+            request.WholePlaylist ? "--yes-playlist" : "--no-playlist",
+            "--ignore-errors",
             "--newline",
             "--no-simulate",
             "--progress",
@@ -59,96 +111,113 @@ internal static class YtDlpService
             "--concurrent-fragments", "4",
             "--windows-filenames",
             "--no-mtime",
-            "--paths", outputFolder,
+            "--paths", request.OutputFolder,
             "--paths", "temp:" + Path.Combine(Path.GetTempPath(), "MuraConverter"),
-            "--output", "%(title).150B.%(ext)s",
+            "--output", output,
             "--progress-template",
             "download:" + ProgressTag + "%(progress.downloaded_bytes)s|%(progress.total_bytes)s|%(progress.total_bytes_estimate)s|%(progress.speed)s|%(progress.eta)s",
-            "--print", "before_dl:" + TitleTag + "%(title)s",
+            "--print", "before_dl:" + TitleTag + "%(playlist_index|)s|%(n_entries|)s|%(title)s",
             "--print", "after_move:" + FileTag + "%(filepath)s",
+            "--embed-metadata",
         };
 
-        if (format == DownloadFormat.Mp3)
+        if (request.Kind == MediaKind.Audio)
         {
-            args.AddRange(new[]
+            var codec = request.AudioFormat.ToString().ToLowerInvariant();
+            args.AddRange(new[] { "--format", "bestaudio/best", "--extract-audio", "--audio-format", codec });
+            if (request.AudioFormat != AudioFormat.Wav)
             {
-                "--format", "bestaudio/best",
-                "--extract-audio",
-                "--audio-format", "mp3",
-                "--audio-quality", audioBitrate + "K",
-                "--embed-metadata",
-                "--embed-thumbnail",
-                "--convert-thumbnails", "jpg",
-            });
+                args.AddRange(new[] { "--audio-quality", request.Quality + "K" });
+                args.AddRange(new[] { "--embed-thumbnail", "--convert-thumbnails", "jpg" });
+            }
         }
         else
         {
             // Highest resolution up to the cap; at equal resolution prefer H.264 + AAC so the
             // result plays everywhere, and merge into MP4 without re-encoding (fast).
-            var sort = videoHeight > 0 ? $"res:{videoHeight},vcodec:h264,acodec:aac" : "vcodec:h264,acodec:aac";
+            var sort = request.Quality > 0 ? $"res:{request.Quality},vcodec:h264,acodec:aac" : "vcodec:h264,acodec:aac";
             args.AddRange(new[]
             {
                 "--format", "bv*+ba/b",
                 "--format-sort", sort,
                 "--merge-output-format", "mp4",
                 "--remux-video", "mp4",
-                "--embed-metadata",
             });
         }
 
-        args.Add("--");
-        args.Add(url.Trim());
+        if (trimmed)
+        {
+            // yt-dlp only fetches the requested section, so a 2-minute cut of a 3-hour stream is quick.
+            var start = request.TrimStart ?? TimeSpan.Zero;
+            var end = request.TrimEnd.HasValue ? request.TrimEnd.Value.TotalSeconds.ToString(CultureInfo.InvariantCulture) : "inf";
+            args.AddRange(new[] { "--download-sections", $"*{start.TotalSeconds.ToString(CultureInfo.InvariantCulture)}-{end}" });
+            if (request.Kind == MediaKind.Video)
+                args.Add("--force-keyframes-at-cuts");
+        }
 
-        string? finalPath = null;
+        args.Add("--");
+        args.Add(request.Url.Trim());
+
+        string? lastPath = null;
         string? title = null;
+        string? counter = null;
+        var files = 0;
         var stream = 0;
         var lastPercent = 0d;
-        var errors = new StringBuilder();
+        var errors = new List<string>();
+        var isAudio = request.Kind == MediaKind.Audio;
 
         void OnLine(string line)
         {
             if (line.StartsWith(ProgressTag, StringComparison.Ordinal))
             {
                 var p = ParseProgress(line[ProgressTag.Length..]);
-                // MP4 downloads video then audio: a drop in percent means the second stream started.
+                // Video downloads fetch video then audio: a drop in percent means the second stream started.
                 if (p.percent.HasValue && p.percent < lastPercent - 50)
                     stream++;
                 if (p.percent.HasValue)
                     lastPercent = p.percent.Value;
-                var stage = format == DownloadFormat.Mp4 && stream > 0 ? "Descargando audio" : "Descargando";
-                progress?.Report(new DownloadProgress(stage, p.percent, p.detail));
+                var stage = !isAudio && stream > 0 ? "Descargando audio" : "Descargando";
+                progress?.Report(new DownloadProgress(counter + stage, p.percent, p.detail, title));
             }
             else if (line.StartsWith(TitleTag, StringComparison.Ordinal))
             {
-                title = line[TitleTag.Length..];
-                progress?.Report(new DownloadProgress("Descargando", 0, title));
+                var parts = line[TitleTag.Length..].Split('|', 3);
+                title = parts.Length == 3 ? parts[2] : line[TitleTag.Length..];
+                counter = parts.Length == 3 && parts[0].Length > 0 && parts[1].Length > 0 ? $"{parts[0]}/{parts[1]} · " : null;
+                stream = 0;
+                lastPercent = 0;
+                progress?.Report(new DownloadProgress(counter + "Descargando", 0, null, title));
             }
             else if (line.StartsWith(FileTag, StringComparison.Ordinal))
             {
-                finalPath = line[FileTag.Length..].Trim();
+                lastPath = line[FileTag.Length..].Trim();
+                files++;
             }
             else if (line.StartsWith("[Merger]") || line.StartsWith("[ExtractAudio]") ||
                      line.StartsWith("[VideoRemuxer]") || line.StartsWith("[EmbedThumbnail]"))
             {
-                progress?.Report(new DownloadProgress(format == DownloadFormat.Mp3 ? "Convirtiendo a MP3" : "Uniendo vídeo y audio", null, title));
+                var stage = isAudio ? $"Convirtiendo a {request.AudioFormat.ToString().ToUpperInvariant()}" : "Uniendo vídeo y audio";
+                progress?.Report(new DownloadProgress(counter + stage, null, null, title));
             }
         }
 
         void OnError(string line)
         {
             if (line.StartsWith("ERROR:", StringComparison.Ordinal))
-                errors.AppendLine(line["ERROR:".Length..].Trim());
+                errors.Add(line["ERROR:".Length..].Trim());
         }
 
         var exitCode = await RunAsync(args, OnLine, OnError, cancellationToken);
 
-        if (exitCode != 0 || finalPath == null)
+        // With --ignore-errors a playlist may finish with some failed entries; that still counts as done.
+        if (lastPath == null)
         {
-            var message = errors.Length > 0 ? errors.ToString().Trim() : $"yt-dlp terminó con código {exitCode}.";
+            var message = errors.Count > 0 ? errors[0] : $"yt-dlp terminó con código {exitCode}.";
             throw new InvalidOperationException(message);
         }
 
-        return finalPath;
+        return lastPath;
     }
 
     /// <summary>
@@ -166,6 +235,62 @@ internal static class YtDlpService
         {
             return false;
         }
+    }
+
+    /// <summary>Parses "90", "1:30" or "1:02:03" into a TimeSpan.</summary>
+    public static bool TryParseTime(string? text, out TimeSpan? value)
+    {
+        value = null;
+        if (string.IsNullOrWhiteSpace(text))
+            return true;
+
+        double seconds = 0;
+        foreach (var part in text.Trim().Replace(',', '.').Split(':'))
+        {
+            if (!double.TryParse(part, NumberStyles.Float, CultureInfo.InvariantCulture, out var n) || n < 0)
+                return false;
+            seconds = seconds * 60 + n;
+        }
+
+        value = TimeSpan.FromSeconds(seconds);
+        return true;
+    }
+
+    public static string FormatDuration(TimeSpan t) =>
+        t.ToString(t.TotalHours >= 1 ? @"h\:mm\:ss" : @"m\:ss", CultureInfo.InvariantCulture);
+
+    private static async Task<JsonElement?> DumpJsonAsync(string[] extra, string url, CancellationToken cancellationToken)
+    {
+        EnsureTools();
+        var json = new StringBuilder();
+        var errors = new StringBuilder();
+        var args = new List<string> { "--dump-single-json", "--no-warnings", "--encoding", "utf-8" };
+        args.AddRange(extra);
+        args.Add("--");
+        args.Add(url.Trim());
+
+        var exit = await RunAsync(args, l => json.AppendLine(l), l => errors.AppendLine(l), cancellationToken);
+        if (exit != 0 || json.Length == 0)
+            throw new InvalidOperationException(errors.ToString().Replace("ERROR:", "").Trim());
+
+        using var doc = JsonDocument.Parse(json.ToString());
+        return doc.RootElement.Clone();
+    }
+
+    private static string? GetString(JsonElement e, string name) =>
+        e.TryGetProperty(name, out var v) && v.ValueKind == JsonValueKind.String ? v.GetString() : null;
+
+    private static double? GetDouble(JsonElement e, string name) =>
+        e.TryGetProperty(name, out var v) && v.ValueKind == JsonValueKind.Number ? v.GetDouble() : null;
+
+    private static int? GetInt(JsonElement e, string name) =>
+        e.TryGetProperty(name, out var v) && v.ValueKind == JsonValueKind.Number && v.TryGetInt32(out var i) ? i : null;
+
+    private static string? FirstThumbnail(JsonElement e)
+    {
+        if (!e.TryGetProperty("thumbnails", out var thumbs) || thumbs.ValueKind != JsonValueKind.Array)
+            return null;
+        return thumbs.EnumerateArray().Select(t => GetString(t, "url")).LastOrDefault(u => u != null);
     }
 
     private static (double? percent, string? detail) ParseProgress(string payload)
@@ -187,7 +312,7 @@ internal static class YtDlpService
         if (speed is > 0)
             detail.Append("  ·  ").Append(FormatBytes(speed.Value)).Append("/s");
         if (eta is > 0)
-            detail.Append("  ·  ").Append(TimeSpan.FromSeconds(eta.Value).ToString(eta >= 3600 ? @"h\:mm\:ss" : @"m\:ss"));
+            detail.Append("  ·  ").Append(FormatDuration(TimeSpan.FromSeconds(eta.Value)));
 
         return (percent, detail.ToString());
     }

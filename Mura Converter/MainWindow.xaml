@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Mura Converter"
         Icon="appicon.ico"
-        Width="500"
+        Width="520"
         SizeToContent="Height"
         WindowStartupLocation="CenterScreen"
         ResizeMode="CanMinimize"
@@ -14,9 +14,12 @@
         UseLayoutRounding="True"
         AllowDrop="True"
         Activated="Window_Activated"
+        StateChanged="Window_StateChanged"
+        Closing="Window_Closing"
         DragOver="Window_DragOver"
         Drop="Window_Drop">
     <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
         <SolidColorBrush x:Key="SurfaceBrush" Color="#111111"/>
         <SolidColorBrush x:Key="SurfaceBorderBrush" Color="#2A2A2A"/>
         <SolidColorBrush x:Key="InputBrush" Color="#171717"/>
@@ -329,6 +332,43 @@
             <Setter Property="Background" Value="#242424"/>
             <Setter Property="BorderThickness" Value="0"/>
         </Style>
+
+        <Style x:Key="DarkCheckBox" TargetType="CheckBox">
+            <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="CheckBox">
+                        <StackPanel Orientation="Horizontal" Background="Transparent">
+                            <Border x:Name="Box" Width="16" Height="16" CornerRadius="4"
+                                    Background="{StaticResource InputBrush}"
+                                    BorderBrush="{StaticResource InputBorderBrush}" BorderThickness="1">
+                                <Path x:Name="Mark" Data="M 3 8 L 6.5 11.5 L 13 4.5" Stroke="White" StrokeThickness="2"
+                                      Visibility="Collapsed" Margin="-1"/>
+                            </Border>
+                            <ContentPresenter Margin="8,0,0,0" VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Box" Property="Background" Value="{StaticResource AccentBrush}"/>
+                                <Setter TargetName="Box" Property="BorderBrush" Value="{StaticResource AccentBrush}"/>
+                                <Setter TargetName="Mark" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Box" Property="BorderBrush" Value="#5A5A5A"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="IconButtonStyle" TargetType="Button" BasedOn="{StaticResource WindowButtonStyle}">
+            <Setter Property="Width" Value="26"/>
+            <Setter Property="Height" Value="26"/>
+            <Setter Property="FontSize" Value="12"/>
+        </Style>
     </Window.Resources>
 
     <Border Background="{StaticResource SurfaceBrush}"
@@ -358,13 +398,14 @@
             </Border>
 
             <StackPanel Margin="14">
-                <TextBlock Text="Enlace" FontWeight="SemiBold" Foreground="{StaticResource TextSecondaryBrush}"/>
-                <Grid Margin="0,6,0,0">
+                <!-- Link -->
+                <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
-                    <TextBox x:Name="UrlBox" KeyDown="UrlBox_KeyDown"/>
+                    <TextBox x:Name="UrlBox" KeyDown="UrlBox_KeyDown" TextChanged="UrlBox_TextChanged"
+                             ToolTip="Enlace de YouTube, TikTok, Instagram, X, Twitch, SoundCloud…"/>
                     <Button x:Name="PasteButton"
                             Grid.Column="1"
                             Width="70"
@@ -375,68 +416,139 @@
                             Click="Paste_Click"/>
                 </Grid>
 
+                <!-- Preview -->
+                <Border x:Name="PreviewCard"
+                        Visibility="Collapsed"
+                        Margin="0,10,0,0"
+                        CornerRadius="7"
+                        Background="{StaticResource StatusBrush}"
+                        BorderBrush="{StaticResource SurfaceBorderBrush}"
+                        BorderThickness="1"
+                        Padding="8">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Border Width="96" Height="54" CornerRadius="5" Background="#222222" ClipToBounds="True" VerticalAlignment="Top">
+                            <Image x:Name="PreviewImage" Stretch="UniformToFill"/>
+                        </Border>
+                        <StackPanel Grid.Column="1" Margin="10,0,0,0" VerticalAlignment="Center">
+                            <TextBlock x:Name="PreviewTitle" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}"
+                                       TextWrapping="Wrap" MaxHeight="36" TextTrimming="CharacterEllipsis"/>
+                            <TextBlock x:Name="PreviewMeta" Margin="0,3,0,0" FontSize="12"
+                                       Foreground="{StaticResource TextSecondaryBrush}" TextTrimming="CharacterEllipsis"/>
+                            <CheckBox x:Name="PlaylistOption" Margin="0,6,0,0" Visibility="Collapsed" Style="{StaticResource DarkCheckBox}"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- Options -->
                 <Grid Margin="0,14,0,0">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="190"/>
-                        <ColumnDefinition Width="12"/>
+                        <ColumnDefinition Width="170"/>
+                        <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
 
                     <StackPanel>
-                        <TextBlock Text="Formato" FontWeight="SemiBold" Foreground="{StaticResource TextSecondaryBrush}"/>
+                        <TextBlock Text="Tipo" FontWeight="SemiBold" Foreground="{StaticResource TextSecondaryBrush}"/>
                         <Border Margin="0,6,0,0" Height="36" CornerRadius="7"
                                 Background="{StaticResource InputBrush}"
                                 BorderBrush="{StaticResource InputBorderBrush}" BorderThickness="1">
                             <UniformGrid Columns="2">
-                                <RadioButton x:Name="Mp4Option" Content="MP4 · vídeo" Style="{StaticResource SegmentStyle}" Checked="Format_Changed"/>
-                                <RadioButton x:Name="Mp3Option" Content="MP3 · audio" Style="{StaticResource SegmentStyle}" Checked="Format_Changed"/>
+                                <RadioButton x:Name="VideoOption" Content="Vídeo" Style="{StaticResource SegmentStyle}" Checked="Kind_Changed"/>
+                                <RadioButton x:Name="AudioOption" Content="Audio" Style="{StaticResource SegmentStyle}" Checked="Kind_Changed"/>
                             </UniformGrid>
                         </Border>
                     </StackPanel>
 
-                    <StackPanel Grid.Column="2">
+                    <StackPanel x:Name="AudioFormatPanel" Grid.Column="1" Width="100" Margin="12,0,0,0">
+                        <TextBlock Text="Formato" FontWeight="SemiBold" Foreground="{StaticResource TextSecondaryBrush}"/>
+                        <ComboBox x:Name="AudioFormatSelector" Margin="0,6,0,0" SelectionChanged="AudioFormat_Changed"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="2" Margin="12,0,0,0">
                         <TextBlock x:Name="QualityLabel" Text="Calidad" FontWeight="SemiBold" Foreground="{StaticResource TextSecondaryBrush}"/>
                         <ComboBox x:Name="QualitySelector" Margin="0,6,0,0" SelectionChanged="Quality_Changed"/>
                     </StackPanel>
                 </Grid>
 
+                <!-- Trim -->
+                <StackPanel Orientation="Horizontal" Margin="0,12,0,0" Height="30">
+                    <CheckBox x:Name="TrimOption" Content="Recortar" VerticalAlignment="Center" Style="{StaticResource DarkCheckBox}"
+                              Checked="Trim_Changed" Unchecked="Trim_Changed"/>
+                    <StackPanel x:Name="TrimPanel" Orientation="Horizontal" Visibility="Collapsed" Margin="14,0,0,0">
+                        <TextBlock Text="Desde" VerticalAlignment="Center" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}"/>
+                        <TextBox x:Name="TrimStartBox" Width="74" Height="30" Margin="6,0,10,0" FontSize="13" ToolTip="Ej. 1:20 (vacío = inicio)"/>
+                        <TextBlock Text="Hasta" VerticalAlignment="Center" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}"/>
+                        <TextBox x:Name="TrimEndBox" Width="74" Height="30" Margin="6,0,0,0" FontSize="13" ToolTip="Ej. 2:45 (vacío = final)"/>
+                    </StackPanel>
+                </StackPanel>
+
                 <Button x:Name="DownloadButton"
-                        Margin="0,16,0,0"
+                        Margin="0,14,0,0"
                         Content="Descargar"
                         Style="{StaticResource AccentButtonStyle}"
                         Click="Download_Click"/>
 
-                <Border Margin="0,12,0,0"
+                <TextBlock x:Name="HintText" Margin="0,8,0,0" FontSize="12" Visibility="Collapsed"
+                           Foreground="#F2A0A3" TextWrapping="Wrap"/>
+
+                <TextBlock x:Name="EmptyHint" Margin="0,12,0,0" FontSize="12" TextAlignment="Center"
+                           Foreground="{StaticResource TextSecondaryBrush}"
+                           Text="Copia un enlace y se pegará solo. Puedes añadir varios a la cola."/>
+
+                <!-- Queue -->
+                <Border x:Name="QueuePanel"
+                        Visibility="Collapsed"
+                        Margin="0,12,0,0"
                         CornerRadius="7"
                         Background="{StaticResource StatusBrush}"
                         BorderBrush="{StaticResource SurfaceBorderBrush}"
-                        BorderThickness="1"
-                        Padding="12,10">
-                    <StackPanel>
-                        <Grid>
-                            <TextBlock x:Name="StatusText"
-                                       Text="Copia un enlace de YouTube y se pegará solo."
-                                       Foreground="{StaticResource TextPrimaryBrush}"
-                                       TextTrimming="CharacterEllipsis"
-                                       Margin="0,0,100,0"/>
-                            <Button x:Name="ShowFileButton"
-                                    HorizontalAlignment="Right"
-                                    Content="Mostrar archivo"
-                                    Visibility="Collapsed"
-                                    Style="{StaticResource LinkButtonStyle}"
-                                    Click="ShowFile_Click"/>
+                        BorderThickness="1">
+                    <DockPanel>
+                        <Grid DockPanel.Dock="Top" Margin="12,8,8,4">
+                            <TextBlock Text="Descargas" FontWeight="SemiBold" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" VerticalAlignment="Center"/>
+                            <Button HorizontalAlignment="Right" Content="Limpiar terminadas" Style="{StaticResource LinkButtonStyle}" Click="ClearFinished_Click"/>
                         </Grid>
-                        <TextBlock x:Name="DetailText"
-                                   Margin="0,4,0,0"
-                                   FontSize="12"
-                                   Visibility="Collapsed"
-                                   Foreground="{StaticResource TextSecondaryBrush}"
-                                   TextWrapping="Wrap"
-                                   MaxHeight="48"/>
-                        <ProgressBar x:Name="Progress" Margin="0,8,0,0" Minimum="0" Maximum="100"/>
-                    </StackPanel>
+                        <ScrollViewer MaxHeight="230" VerticalScrollBarVisibility="Auto">
+                            <ItemsControl x:Name="QueueList">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border BorderBrush="{StaticResource SurfaceBorderBrush}" BorderThickness="0,1,0,0" Padding="12,8,8,8">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <StackPanel>
+                                                    <TextBlock Text="{Binding Title}" Foreground="{StaticResource TextPrimaryBrush}" TextTrimming="CharacterEllipsis"/>
+                                                    <TextBlock Margin="0,3,0,0" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" TextTrimming="CharacterEllipsis">
+                                                        <Run Text="{Binding Status, Mode=OneWay}"/><Run Text="   "/><Run Text="{Binding Detail, Mode=OneWay}"/>
+                                                    </TextBlock>
+                                                    <ProgressBar Margin="0,6,0,0" Height="4"
+                                                                 Value="{Binding Percent, Mode=OneWay}"
+                                                                 IsIndeterminate="{Binding IsIndeterminate, Mode=OneWay}"
+                                                                 Visibility="{Binding IsActive, Converter={StaticResource BoolToVis}}"/>
+                                                </StackPanel>
+                                                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="8,0,0,0">
+                                                    <Button Content="📂" ToolTip="Mostrar archivo" Style="{StaticResource IconButtonStyle}"
+                                                            Visibility="{Binding CanShowFile, Converter={StaticResource BoolToVis}}"
+                                                            Click="QueueItemShow_Click"/>
+                                                    <Button Content="✕" ToolTip="Cancelar / quitar" Style="{StaticResource IconButtonStyle}"
+                                                            Click="QueueItemAction_Click"/>
+                                                </StackPanel>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </DockPanel>
                 </Border>
 
+                <!-- Output folder -->
                 <Grid Margin="0,12,0,0">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
