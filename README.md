@@ -1,8 +1,8 @@
-# 🎧 Mura Converter
+# 🎧 Mura Converter — Simple Media Converter
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A desktop application to convert YouTube videos to MP3 or MP4, built with C# and WPF.  
-It allows pasting a YouTube URL and easily downloading the video or just the audio.
+A simple desktop media converter built with C# and WPF.  
+Paste a link from YouTube, TikTok, Instagram, SoundCloud and many more sites, and download the video or just the audio in the format you need.
 
 > ⚠️ **Legal Disclaimer**
 
