@@ -66,7 +66,7 @@ Feel free to reach out or follow me:
 - 🐙 GitHub: [@VitomDev](https://github.com/VitomDev)
 - 🐦 Twitter/X: [@VitomDev](https://twitter.com/VitomDev)
 - 🎮 Twitch: [@VitomDev](https://www.twitch.tv/VitomDev)
-- 💼 LinkedIn: [Víctor Escós](https://www.linkedin.com/in/víctor-escós-batalla/)
+- 💼 LinkedIn: [VitomDev](https://www.linkedin.com/in/víctor-escós-batalla/)
 
 ---
 
