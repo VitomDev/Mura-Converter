@@ -13,7 +13,7 @@
     <ApplicationIcon>appicon.ico</ApplicationIcon>
     <Version>2.1.0</Version>
     <Product>Mura Converter</Product>
-    <Authors>Víctor Escós Batalla</Authors>
+    <Authors>VitomDev</Authors>
 
     <!-- Self-contained so the installer works on any Windows 10/11 PC without installing .NET. -->
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
