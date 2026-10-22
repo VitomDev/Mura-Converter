@@ -17,6 +17,7 @@ DisableProgramGroupPage=yes
 DisableDirPage=auto
 OutputDir=..\dist
 OutputBaseFilename=MuraConverter-Setup-{#AppVersion}
+LicenseFile=..\LICENSE
 SetupIconFile=..\Mura Converter\appicon.ico
 UninstallDisplayIcon={app}\{#AppExe}
 Compression=lzma2/ultra64
