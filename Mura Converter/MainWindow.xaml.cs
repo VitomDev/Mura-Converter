@@ -37,7 +37,10 @@ public partial class MainWindow : Window
 
     private readonly AppSettings settings = AppSettings.Load();
     private readonly ObservableCollection<QueueItem> queue = new();
-    private readonly Notifier notifier;
+    // Created on the first notification: it is the only user of WinForms,
+    // which would otherwise be loaded (~17 MB) for every session.
+    private Notifier? notifierInstance;
+    private Notifier notifier => notifierInstance ??= new Notifier(RestoreWindow);
     private Task? updateTask;
     private bool processing;
     private bool quietMode;
@@ -49,7 +52,6 @@ public partial class MainWindow : Window
     internal MainWindow(LaunchArgs launch)
     {
         InitializeComponent();
-        notifier = new Notifier(RestoreWindow);
 
         QueueList.ItemsSource = queue;
         AudioFormatSelector.ItemsSource = AudioFormats.Select(f => f.ToString().ToUpperInvariant()).ToArray();
@@ -140,6 +142,8 @@ public partial class MainWindow : Window
     {
         if (WindowState == WindowState.Normal)
             quietMode = false;
+        else if (WindowState == WindowState.Minimized && !processing)
+            TrimMemory();
     }
 
     // ---------- Clipboard, drag & drop ----------
@@ -605,6 +609,16 @@ public partial class MainWindow : Window
 
         foreach (var item in queue.Where(i => i.IsActive))
             item.Cancellation.Cancel();
-        notifier.Dispose();
+        notifierInstance?.Dispose();
+    }
+
+    [System.Runtime.InteropServices.DllImport("kernel32.dll")]
+    private static extern bool SetProcessWorkingSetSize(IntPtr process, IntPtr minimum, IntPtr maximum);
+
+    // Minimized and idle: give memory back to Windows, which reloads pages on demand.
+    private void TrimMemory()
+    {
+        GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, blocking: true, compacting: true);
+        SetProcessWorkingSetSize(Process.GetCurrentProcess().Handle, -1, -1);
     }
 }

@@ -11,7 +11,7 @@
     <!-- Only for NotifyIcon (Windows notifications). -->
     <UseWindowsForms>true</UseWindowsForms>
     <ApplicationIcon>appicon.ico</ApplicationIcon>
-    <Version>2.1.0</Version>
+    <Version>2.2.0</Version>
     <Product>Mura Converter</Product>
     <Authors>VitomDev</Authors>
 
@@ -20,6 +20,8 @@
     <SelfContained>true</SelfContained>
     <PublishReadyToRun>true</PublishReadyToRun>
     <TieredPGO>true</TieredPGO>
+    <!-- Mura is idle most of the time: no background GC thread needed. -->
+    <ConcurrentGarbageCollection>false</ConcurrentGarbageCollection>
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
     <DebugType>none</DebugType>
   </PropertyGroup>

@@ -1,6 +1,6 @@
 ﻿; Inno Setup script for Mura Converter. Built by build.ps1.
 #define AppName "Mura Converter"
-#define AppVersion "2.1.0"
+#define AppVersion "2.2.0"
 #define AppExe "MuraConverter.exe"
 
 [Setup]

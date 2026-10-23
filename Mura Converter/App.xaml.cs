@@ -1,4 +1,6 @@
 using System.Windows;
+using System.Windows.Interop;
+using System.Windows.Media;
 
 namespace Mura_Converter;
 
@@ -35,6 +37,9 @@ public partial class App : Application
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+        // Software rendering: the window is simple, and Direct3D would load the
+        // graphics driver (~45 MB with NVIDIA) and keep a render thread busier.
+        RenderOptions.ProcessRenderMode = RenderMode.SoftwareOnly;
 
         instance = SingleInstance.TryAcquire(e.Args);
         if (instance == null)
