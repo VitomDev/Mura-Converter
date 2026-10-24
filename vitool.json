@@ -1,0 +1,8 @@
+{
+  "appId": "{6E0B9C1A-3F7D-4C55-9A0E-4D2B7C1E8F21}",
+  "name": "Mura Converter",
+  "category": "Media",
+  "screenshots": [],
+  "installer": "MuraConverter-Setup-*.exe",
+  "exe": "MuraConverter.exe"
+}
