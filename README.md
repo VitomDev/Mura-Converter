@@ -61,6 +61,8 @@ It downloads yt-dlp and FFmpeg into `Mura Converter/tools/` if missing, publishe
 - [yt-dlp](https://github.com/yt-dlp/yt-dlp) — downloading from YouTube and many other sites
 - [FFmpeg](https://ffmpeg.org) — merging and converting audio and video
 
+See [third-party notices](THIRD-PARTY-NOTICES.md) for licenses.
+
 ---
 
 ## 🪟 Compatibility
