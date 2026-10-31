@@ -1,3 +1,5 @@
+<p align="center"><img src="assets/mura.png" width="96" alt="Mura Converter"></p>
+
 # 🎧 Mura Converter — Simple Media Converter
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
@@ -32,7 +34,11 @@ I do **not endorse** or take **any responsibility** for how others use this tool
 
 ## 📦 Install
 
-Run `MuraConverter-Setup-x.y.z.exe`. Per-user install, no admin rights and no .NET needed.
+Download `MuraConverter-Setup-x.y.z.exe` from [Releases](https://github.com/VitomDev/Mura-Converter/releases/latest) and run it.
+
+> 🧰 **Recommended:** install it with [Vitool Box](https://github.com/VitomDev/Vitool-Box), which keeps all VitomDev apps in one place and installs or removes them with a switch.
+
+- Per-user install, no admin rights and no .NET needed
 
 Optional: installing [Deno](https://deno.com) (`winget install DenoLand.Deno`) lets yt-dlp see every YouTube format; it is picked up automatically.
 
@@ -50,12 +56,30 @@ It downloads yt-dlp and FFmpeg into `Mura Converter/tools/` if missing, publishe
 
 ---
 
+## 📚 Dependencies
+
+- [yt-dlp](https://github.com/yt-dlp/yt-dlp) — downloading from YouTube and many other sites
+- [FFmpeg](https://ffmpeg.org) — merging and converting audio and video
+
+---
+
+## 🪟 Compatibility
+
+Windows 10 and Windows 11, 64-bit.
+
+---
+
 ## 🧪 Project Status
 
-🛠️ Currently paused.  
+✅ Stable.  
 This project is fully functional as-is and ready to use.
-However, future updates to improve features or the interface are not ruled out.
-For now, development is paused while I focus on other projects.
+Future updates to improve features or the interface are not ruled out.
+
+---
+
+## 📄 License
+
+[MIT](LICENSE) © VitomDev
 
 ---
 
@@ -67,11 +91,3 @@ Feel free to reach out or follow me:
 - 🐦 Twitter/X: [@VitomDev](https://twitter.com/VitomDev)
 - 🎮 Twitch: [@VitomDev](https://www.twitch.tv/VitomDev)
 - 💼 LinkedIn: [VitomDev](https://www.linkedin.com/in/víctor-escós-batalla/)
-
----
-
-## 🧑‍💻 Author
-
-**VitomDev**  
-
-
