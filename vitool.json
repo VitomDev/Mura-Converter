@@ -5,5 +5,8 @@
   "icon": "assets/mura.png",
   "screenshots": [],
   "installer": "MuraConverter-Setup-*.exe",
-  "exe": "MuraConverter.exe"
+  "exe": "MuraConverter.exe",
+  "settings": [
+    "%APPDATA%\\MuraConverter"
+  ]
 }
