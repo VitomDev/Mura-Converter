@@ -3,7 +3,9 @@
   "name": "Mura Converter",
   "category": "Media",
   "icon": "assets/mura.png",
-  "screenshots": [],
+  "screenshots": [
+    "assets/screenshots/screenshot-1.png"
+  ],
   "installer": "MuraConverter-Setup-*.exe",
   "exe": "MuraConverter.exe",
   "settings": [
