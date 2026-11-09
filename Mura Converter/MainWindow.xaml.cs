@@ -34,6 +34,7 @@ public partial class MainWindow : Window
     private static readonly QualityOption[] LosslessQuality = { new(0, "Sin pérdida") };
 
     private static readonly AudioFormat[] AudioFormats = Enum.GetValues<AudioFormat>();
+    private static readonly VideoFormat[] VideoFormats = Enum.GetValues<VideoFormat>();
 
     private readonly AppSettings settings = AppSettings.Load();
     private readonly ObservableCollection<QueueItem> queue = new();
@@ -54,8 +55,6 @@ public partial class MainWindow : Window
         InitializeComponent();
 
         QueueList.ItemsSource = queue;
-        AudioFormatSelector.ItemsSource = AudioFormats.Select(f => f.ToString().ToUpperInvariant()).ToArray();
-        AudioFormatSelector.SelectedIndex = Array.IndexOf(AudioFormats, settings.AudioFormat);
         VideoOption.IsChecked = settings.Kind == MediaKind.Video;
         AudioOption.IsChecked = settings.Kind == MediaKind.Audio;
         loadingUi = false;
@@ -91,8 +90,8 @@ public partial class MainWindow : Window
 
     private MediaKind SelectedKind => AudioOption.IsChecked == true ? MediaKind.Audio : MediaKind.Video;
 
-    private AudioFormat SelectedAudioFormat =>
-        AudioFormatSelector.SelectedIndex >= 0 ? AudioFormats[AudioFormatSelector.SelectedIndex] : AudioFormat.Mp3;
+    private AudioFormat SelectedAudioFormat => settings.AudioFormat;
+    private VideoFormat SelectedVideoFormat => settings.VideoFormat;
 
     // ---------- Launch arguments (command line, Explorer context menu, second instance) ----------
 
@@ -218,6 +217,7 @@ public partial class MainWindow : Window
         {
             preview = null;
             PreviewCard.Visibility = Visibility.Collapsed;
+            SetTrimDuration(null);
             return;
         }
 
@@ -233,6 +233,7 @@ public partial class MainWindow : Window
         PreviewImage.Source = null;
         PlaylistOption.Visibility = Visibility.Collapsed;
         PlaylistOption.IsChecked = false;
+        SetTrimDuration(null);
 
         try
         {
@@ -242,6 +243,7 @@ public partial class MainWindow : Window
                 return;
 
             preview = (url, info);
+            SetTrimDuration(info.Duration);
             PreviewTitle.Text = info.Title;
             PreviewMeta.Text = string.Join("  ·  ", new[]
             {
@@ -293,11 +295,14 @@ public partial class MainWindow : Window
         RefreshOptions();
     }
 
-    private void AudioFormat_Changed(object sender, SelectionChangedEventArgs e)
+    private void Format_Changed(object sender, SelectionChangedEventArgs e)
     {
-        if (loadingUi)
+        if (loadingUi || FormatSelector.SelectedIndex < 0)
             return;
-        settings.AudioFormat = SelectedAudioFormat;
+        if (SelectedKind == MediaKind.Audio)
+            settings.AudioFormat = AudioFormats[FormatSelector.SelectedIndex];
+        else
+            settings.VideoFormat = VideoFormats[FormatSelector.SelectedIndex];
         settings.Save();
         RefreshOptions();
     }
@@ -305,7 +310,22 @@ public partial class MainWindow : Window
     private void RefreshOptions()
     {
         var isAudio = SelectedKind == MediaKind.Audio;
-        AudioFormatPanel.Visibility = isAudio ? Visibility.Visible : Visibility.Collapsed;
+        // The same selector lists audio or video containers depending on the chosen kind.
+        var wasLoading = loadingUi;
+        loadingUi = true;
+        FormatSelector.ItemsSource = isAudio
+            ? AudioFormats.Select(f => f.ToString().ToUpperInvariant()).ToArray()
+            : VideoFormats.Select(f => f == VideoFormat.Webm ? "WebM" : f.ToString().ToUpperInvariant()).ToArray();
+        FormatSelector.SelectedIndex = isAudio
+            ? Array.IndexOf(AudioFormats, settings.AudioFormat)
+            : Array.IndexOf(VideoFormats, settings.VideoFormat);
+        FormatSelector.ToolTip = isAudio ? null : settings.VideoFormat switch
+        {
+            VideoFormat.Mkv => "Máxima calidad disponible, sin recodificar",
+            VideoFormat.Webm => "Formato nativo de YouTube, sin recodificar",
+            _ => "El más compatible (H.264 + AAC)",
+        };
+        loadingUi = wasLoading;
 
         QualityOption[] options;
         int current;
@@ -350,8 +370,76 @@ public partial class MainWindow : Window
     private void Trim_Changed(object sender, RoutedEventArgs e)
     {
         TrimPanel.Visibility = TrimOption.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
-        if (TrimOption.IsChecked == true)
-            TrimStartBox.Focus();
+    }
+
+    private TimeSpan? trimDuration;
+
+    /// <summary>Sizes the trim bar to the media length; without a known length only manual times are possible.</summary>
+    private void SetTrimDuration(TimeSpan? duration)
+    {
+        trimDuration = duration;
+        TrimSlider.IsEnabled = duration.HasValue;
+        TrimSlider.SetMaximum(duration?.TotalSeconds ?? 1);
+        if (duration.HasValue)
+        {
+            TrimStartBox.Text = YtDlpService.FormatDuration(TimeSpan.Zero);
+            TrimEndBox.Text = YtDlpService.FormatDuration(duration.Value);
+        }
+        UpdateTrimLength();
+    }
+
+    private void TrimSlider_RangeChanged(object? sender, EventArgs e)
+    {
+        TrimStartBox.Text = YtDlpService.FormatDuration(TimeSpan.FromSeconds(TrimSlider.Start));
+        TrimEndBox.Text = YtDlpService.FormatDuration(TimeSpan.FromSeconds(TrimSlider.End));
+        UpdateTrimLength();
+    }
+
+    private void TrimBox_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter)
+        {
+            TrimBox_Commit(sender, e);
+            e.Handled = true;
+        }
+    }
+
+    private void TrimBox_Commit(object sender, RoutedEventArgs e)
+    {
+        if (!YtDlpService.TryParseTime(TrimStartBox.Text, out var start) || !YtDlpService.TryParseTime(TrimEndBox.Text, out var end))
+        {
+            SetHint("Tiempo no válido. Usa por ejemplo 1:20 o 1:02:30.");
+            return;
+        }
+        SetHint(null);
+
+        if (trimDuration.HasValue)
+        {
+            var max = trimDuration.Value.TotalSeconds;
+            var s = Math.Min(start?.TotalSeconds ?? 0, max);
+            var en = Math.Min(end?.TotalSeconds ?? max, max);
+            // Keep the handle the user just typed in and push the other one if they cross.
+            if (s > en)
+            {
+                if (sender == TrimStartBox) en = s;
+                else s = en;
+            }
+            TrimSlider.SetRange(s, en);
+            TrimSlider_RangeChanged(null, EventArgs.Empty);
+        }
+        else
+        {
+            UpdateTrimLength();
+        }
+    }
+
+    private void UpdateTrimLength()
+    {
+        if (YtDlpService.TryParseTime(TrimStartBox.Text, out var start) && YtDlpService.TryParseTime(TrimEndBox.Text, out var end)
+            && (end ?? trimDuration) is { } stop && stop > (start ?? TimeSpan.Zero))
+            TrimLengthText.Text = "Duración: " + YtDlpService.FormatDuration(stop - (start ?? TimeSpan.Zero));
+        else
+            TrimLengthText.Text = "";
     }
 
     // ---------- Queue ----------
@@ -381,6 +469,11 @@ public partial class MainWindow : Window
                 SetHint("El final del recorte debe ser posterior al inicio.");
                 return;
             }
+            // A range covering the whole media is no trim at all.
+            if (start == TimeSpan.Zero)
+                start = null;
+            if (trimDuration.HasValue && end >= trimDuration - TimeSpan.FromSeconds(1))
+                end = null;
         }
 
         var info = preview?.Url == url ? preview.Value.Info : null;
@@ -404,8 +497,9 @@ public partial class MainWindow : Window
         // "mp3"/"mp4" on the command line only affect that download, not the saved choice.
         var kind = kindOverride ?? SelectedKind;
         var audioFormat = kindOverride == MediaKind.Audio ? AudioFormat.Mp3 : SelectedAudioFormat;
+        var videoFormat = kindOverride == MediaKind.Video ? VideoFormat.Mp4 : SelectedVideoFormat;
         var quality = kind == MediaKind.Audio ? settings.AudioBitrate : settings.VideoHeight;
-        return new DownloadRequest(url, kind, audioFormat, quality, wholePlaylist, start, end, folder);
+        return new DownloadRequest(url, kind, audioFormat, videoFormat, quality, wholePlaylist, start, end, folder);
     }
 
     private void Enqueue(DownloadRequest request, string title)

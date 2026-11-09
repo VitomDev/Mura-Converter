@@ -1,6 +1,7 @@
 <Window x:Class="Mura_Converter.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:Mura_Converter"
         Title="Mura Converter"
         Icon="appicon.ico"
         Width="520"
@@ -463,9 +464,9 @@
                         </Border>
                     </StackPanel>
 
-                    <StackPanel x:Name="AudioFormatPanel" Grid.Column="1" Width="100" Margin="12,0,0,0">
+                    <StackPanel Grid.Column="1" Width="100" Margin="12,0,0,0">
                         <TextBlock Text="Formato" FontWeight="SemiBold" Foreground="{StaticResource TextSecondaryBrush}"/>
-                        <ComboBox x:Name="AudioFormatSelector" Margin="0,6,0,0" SelectionChanged="AudioFormat_Changed"/>
+                        <ComboBox x:Name="FormatSelector" Margin="0,6,0,0" SelectionChanged="Format_Changed"/>
                     </StackPanel>
 
                     <StackPanel Grid.Column="2" Margin="12,0,0,0">
@@ -475,14 +476,30 @@
                 </Grid>
 
                 <!-- Trim -->
-                <StackPanel Orientation="Horizontal" Margin="0,12,0,0" Height="30">
-                    <CheckBox x:Name="TrimOption" Content="Recortar" VerticalAlignment="Center" Style="{StaticResource DarkCheckBox}"
+                <StackPanel Margin="0,12,0,0">
+                    <CheckBox x:Name="TrimOption" Content="Recortar" Height="22" Style="{StaticResource DarkCheckBox}"
                               Checked="Trim_Changed" Unchecked="Trim_Changed"/>
-                    <StackPanel x:Name="TrimPanel" Orientation="Horizontal" Visibility="Collapsed" Margin="14,0,0,0">
-                        <TextBlock Text="Desde" VerticalAlignment="Center" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}"/>
-                        <TextBox x:Name="TrimStartBox" Width="74" Height="30" Margin="6,0,10,0" FontSize="13" ToolTip="Ej. 1:20 (vacío = inicio)"/>
-                        <TextBlock Text="Hasta" VerticalAlignment="Center" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}"/>
-                        <TextBox x:Name="TrimEndBox" Width="74" Height="30" Margin="6,0,0,0" FontSize="13" ToolTip="Ej. 2:45 (vacío = final)"/>
+                    <StackPanel x:Name="TrimPanel" Visibility="Collapsed" Margin="0,8,0,0">
+                        <local:RangeSlider x:Name="TrimSlider" RangeChanged="TrimSlider_RangeChanged"/>
+                        <Grid Margin="0,8,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="Empieza" VerticalAlignment="Center" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                <TextBox x:Name="TrimStartBox" Width="74" Height="30" Margin="6,0,0,0" FontSize="13" ToolTip="Ej. 1:20 (vacío = inicio)"
+                                         LostFocus="TrimBox_Commit" KeyDown="TrimBox_KeyDown"/>
+                            </StackPanel>
+                            <TextBlock x:Name="TrimLengthText" Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                       FontSize="12" Foreground="{StaticResource TextSecondaryBrush}"/>
+                            <StackPanel Grid.Column="2" Orientation="Horizontal">
+                                <TextBlock Text="Termina" VerticalAlignment="Center" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                <TextBox x:Name="TrimEndBox" Width="74" Height="30" Margin="6,0,0,0" FontSize="13" ToolTip="Ej. 2:45 (vacío = final)"
+                                         LostFocus="TrimBox_Commit" KeyDown="TrimBox_KeyDown"/>
+                            </StackPanel>
+                        </Grid>
                     </StackPanel>
                 </StackPanel>
 
@@ -523,7 +540,11 @@
                                                     <ColumnDefinition Width="Auto"/>
                                                 </Grid.ColumnDefinitions>
                                                 <StackPanel>
-                                                    <TextBlock Text="{Binding Title}" Foreground="{StaticResource TextPrimaryBrush}" TextTrimming="CharacterEllipsis"/>
+                                                    <DockPanel>
+                                                        <TextBlock DockPanel.Dock="Right" Text="{Binding TrimLabel, Mode=OneTime}" FontSize="12"
+                                                                   Foreground="{StaticResource AccentBrush}" VerticalAlignment="Center"/>
+                                                        <TextBlock Text="{Binding Title}" Foreground="{StaticResource TextPrimaryBrush}" TextTrimming="CharacterEllipsis"/>
+                                                    </DockPanel>
                                                     <TextBlock Margin="0,3,0,0" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" TextTrimming="CharacterEllipsis">
                                                         <Run Text="{Binding Status, Mode=OneWay}"/><Run Text="   "/><Run Text="{Binding Detail, Mode=OneWay}"/>
                                                     </TextBlock>

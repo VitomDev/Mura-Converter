@@ -17,6 +17,13 @@ internal enum AudioFormat
     Wav
 }
 
+internal enum VideoFormat
+{
+    Mp4,
+    Mkv,
+    Webm
+}
+
 internal sealed record QualityOption(int Value, string Label)
 {
     public override string ToString() => Label;
@@ -27,6 +34,7 @@ internal sealed record DownloadRequest(
     string Url,
     MediaKind Kind,
     AudioFormat AudioFormat,
+    VideoFormat VideoFormat,
     int Quality,
     bool WholePlaylist,
     TimeSpan? TrimStart,
@@ -71,6 +79,10 @@ internal sealed class QueueItem : INotifyPropertyChanged
 
     public DownloadRequest Request { get; }
     public CancellationTokenSource Cancellation { get; } = new();
+
+    public string? TrimLabel => Request.TrimStart.HasValue || Request.TrimEnd.HasValue
+        ? $"  ✂ {YtDlpService.FormatDuration(Request.TrimStart ?? TimeSpan.Zero)}–{(Request.TrimEnd is { } end ? YtDlpService.FormatDuration(end) : "fin")}"
+        : null;
 
     public string Title { get => title; set => Set(ref title, value); }
     public string Status { get => status; set => Set(ref status, value); }

@@ -15,6 +15,7 @@ internal sealed class AppSettings
 
     public MediaKind Kind { get; set; } = MediaKind.Video;
     public AudioFormat AudioFormat { get; set; } = AudioFormat.Mp3;
+    public VideoFormat VideoFormat { get; set; } = VideoFormat.Mp4;
     public int VideoHeight { get; set; } = 1080;
     public int AudioBitrate { get; set; } = 320;
     public DateTime LastUpdateCheck { get; set; } = DateTime.MinValue;

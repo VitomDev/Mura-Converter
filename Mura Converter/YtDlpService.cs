@@ -133,16 +133,24 @@ internal static class YtDlpService
         }
         else
         {
-            // Highest resolution up to the cap; at equal resolution prefer H.264 + AAC so the
-            // result plays everywhere, and merge into MP4 without re-encoding (fast).
-            var sort = request.Quality > 0 ? $"res:{request.Quality},vcodec:h264,acodec:aac" : "vcodec:h264,acodec:aac";
+            // Highest resolution up to the cap, never re-encoded. MP4 prefers H.264 + AAC so it plays
+            // everywhere; MKV takes the best streams as they are; WebM prefers VP9/AV1 + Opus and falls
+            // back to MKV when the site has no WebM streams (H.264 can't go in a WebM container).
+            var res = request.Quality > 0 ? $"res:{request.Quality}," : "";
+            var (sort, container) = request.VideoFormat switch
+            {
+                VideoFormat.Mkv => (res + "vcodec,acodec", "mkv"),
+                VideoFormat.Webm => (res + "vext:webm,aext:webm", "webm/mkv"),
+                _ => (res + "vcodec:h264,acodec:aac", "mp4"),
+            };
             args.AddRange(new[]
             {
                 "--format", "bv*+ba/b",
                 "--format-sort", sort,
-                "--merge-output-format", "mp4",
-                "--remux-video", "mp4",
+                "--merge-output-format", container,
             });
+            if (request.VideoFormat != VideoFormat.Webm)
+                args.AddRange(new[] { "--remux-video", container });
         }
 
         if (trimmed)
