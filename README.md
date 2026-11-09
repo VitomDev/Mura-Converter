@@ -6,6 +6,8 @@
 A simple desktop media converter built with C# and WPF.  
 Paste a link from YouTube, TikTok, Instagram, SoundCloud and many more sites, and download the video or just the audio in the format you need.
 
+<p align="center"><img src="assets/screenshots/screenshot-1.png" width="520" alt="Mura Converter"></p>
+
 > ⚠️ **Legal Disclaimer**
 
 This project was created for **educational and personal use only**.  
