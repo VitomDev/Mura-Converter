@@ -36,7 +36,7 @@ I do **not endorse** or take **any responsibility** for how others use this tool
 
 ## 📦 Install
 
-Download `MuraConverter-Setup-x.y.z.exe` from [Releases](https://github.com/VitomDev/Mura-Converter/releases/latest) and run it.
+Download `MuraSetup.exe` from [Releases](https://github.com/VitomDev/Mura-Converter/releases/latest) and run it.
 
 > 🧰 **Recommended:** install it with [Vitool Box](https://github.com/VitomDev/Vitool-Box), which keeps all VitomDev apps in one place and installs or removes them with a switch.
 

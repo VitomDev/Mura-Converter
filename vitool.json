@@ -6,7 +6,7 @@
   "screenshots": [
     "assets/screenshots/screenshot-1.png"
   ],
-  "installer": "MuraConverter-Setup-*.exe",
+  "installer": "Mura*Setup*.exe",
   "exe": "MuraConverter.exe",
   "settings": [
     "%APPDATA%\\MuraConverter"

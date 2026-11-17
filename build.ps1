@@ -1,4 +1,15 @@
-# Builds Mura Converter and its installer: .\build.ps1  ->  dist\MuraConverter-Setup-x.y.z.exe
+# Builds Mura Converter and its MuraSetup.exe installer.
+#
+#   .\build.ps1                 Build the app and the installer (dist\MuraSetup.exe).
+#   .\build.ps1 -SkipInstaller  Build the app only (publish\).
+#
+# Requirements: .NET 10 SDK and Inno Setup 6. yt-dlp and FFmpeg are downloaded
+# into "Mura Converter\tools" if missing.
+
+param(
+    [switch]$SkipInstaller
+)
+
 $ErrorActionPreference = 'Stop'
 $root = $PSScriptRoot
 $project = Join-Path $root 'Mura Converter'
@@ -29,6 +40,8 @@ dotnet publish (Join-Path $project 'Mura Converter.csproj') -c Release -o $publi
 if ($LASTEXITCODE) { throw 'dotnet publish failed' }
 
 # 3. Installer.
+if ($SkipInstaller) { return }
+
 $iscc = @(
     "$env:LOCALAPPDATA\Programs\Inno Setup 6\ISCC.exe",
     "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
@@ -38,4 +51,4 @@ if (-not $iscc) { throw 'Inno Setup not found. Install it with: winget install J
 & $iscc (Join-Path $root 'installer\MuraConverter.iss')
 if ($LASTEXITCODE) { throw 'Inno Setup failed' }
 
-Get-ChildItem (Join-Path $root 'dist') -Filter *.exe
+Write-Host "Installer: $(Join-Path $root 'dist\MuraSetup.exe')"
