@@ -27,20 +27,16 @@ ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 CloseApplications=yes
 
-[Languages]
-Name: "spanish"; MessagesFile: "compiler:Languages\Spanish.isl"
-Name: "english"; MessagesFile: "compiler:Default.isl"
-
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"
-Name: "contextmenu"; Description: "Añadir ""Descargar enlace copiado con Mura"" al menú del botón derecho del Explorador"; GroupDescription: "{cm:AdditionalIcons}"
+Name: "contextmenu"; Description: "Add ""Download copied link with Mura"" to the Explorer right-click menu"; GroupDescription: "{cm:AdditionalIcons}"
 
 [Registry]
 ; Right-click on a folder background (or the desktop) / on a folder: downloads the copied link into that folder.
-Root: HKCU; Subkey: "Software\Classes\Directory\Background\shell\MuraConverter"; ValueType: string; ValueName: ""; ValueData: "Descargar enlace copiado con Mura"; Flags: uninsdeletekey; Tasks: contextmenu
+Root: HKCU; Subkey: "Software\Classes\Directory\Background\shell\MuraConverter"; ValueType: string; ValueName: ""; ValueData: "Download copied link with Mura"; Flags: uninsdeletekey; Tasks: contextmenu
 Root: HKCU; Subkey: "Software\Classes\Directory\Background\shell\MuraConverter"; ValueType: string; ValueName: "Icon"; ValueData: "{app}\{#AppExe}"; Tasks: contextmenu
 Root: HKCU; Subkey: "Software\Classes\Directory\Background\shell\MuraConverter\command"; ValueType: string; ValueName: ""; ValueData: """{app}\{#AppExe}"" --clipboard --dir ""%V"""; Tasks: contextmenu
-Root: HKCU; Subkey: "Software\Classes\Directory\shell\MuraConverter"; ValueType: string; ValueName: ""; ValueData: "Descargar enlace copiado aquí con Mura"; Flags: uninsdeletekey; Tasks: contextmenu
+Root: HKCU; Subkey: "Software\Classes\Directory\shell\MuraConverter"; ValueType: string; ValueName: ""; ValueData: "Download copied link here with Mura"; Flags: uninsdeletekey; Tasks: contextmenu
 Root: HKCU; Subkey: "Software\Classes\Directory\shell\MuraConverter"; ValueType: string; ValueName: "Icon"; ValueData: "{app}\{#AppExe}"; Tasks: contextmenu
 Root: HKCU; Subkey: "Software\Classes\Directory\shell\MuraConverter\command"; ValueType: string; ValueName: ""; ValueData: """{app}\{#AppExe}"" --clipboard --dir ""%1"""; Tasks: contextmenu
 

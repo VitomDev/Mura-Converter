@@ -406,13 +406,13 @@
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
                     <TextBox x:Name="UrlBox" KeyDown="UrlBox_KeyDown" TextChanged="UrlBox_TextChanged"
-                             ToolTip="Enlace de YouTube, TikTok, Instagram, X, Twitch, SoundCloud…"/>
+                             ToolTip="Link from YouTube, TikTok, Instagram, X, Twitch, SoundCloud…"/>
                     <Button x:Name="PasteButton"
                             Grid.Column="1"
                             Width="70"
                             Height="38"
                             Margin="8,0,0,0"
-                            Content="Pegar"
+                            Content="Paste"
                             Style="{StaticResource SecondaryButtonStyle}"
                             Click="Paste_Click"/>
                 </Grid>
@@ -453,31 +453,31 @@
                     </Grid.ColumnDefinitions>
 
                     <StackPanel>
-                        <TextBlock Text="Tipo" FontWeight="SemiBold" Foreground="{StaticResource TextSecondaryBrush}"/>
+                        <TextBlock Text="Type" FontWeight="SemiBold" Foreground="{StaticResource TextSecondaryBrush}"/>
                         <Border Margin="0,6,0,0" Height="36" CornerRadius="7"
                                 Background="{StaticResource InputBrush}"
                                 BorderBrush="{StaticResource InputBorderBrush}" BorderThickness="1">
                             <UniformGrid Columns="2">
-                                <RadioButton x:Name="VideoOption" Content="Vídeo" Style="{StaticResource SegmentStyle}" Checked="Kind_Changed"/>
+                                <RadioButton x:Name="VideoOption" Content="Video" Style="{StaticResource SegmentStyle}" Checked="Kind_Changed"/>
                                 <RadioButton x:Name="AudioOption" Content="Audio" Style="{StaticResource SegmentStyle}" Checked="Kind_Changed"/>
                             </UniformGrid>
                         </Border>
                     </StackPanel>
 
                     <StackPanel Grid.Column="1" Width="100" Margin="12,0,0,0">
-                        <TextBlock Text="Formato" FontWeight="SemiBold" Foreground="{StaticResource TextSecondaryBrush}"/>
+                        <TextBlock Text="Format" FontWeight="SemiBold" Foreground="{StaticResource TextSecondaryBrush}"/>
                         <ComboBox x:Name="FormatSelector" Margin="0,6,0,0" SelectionChanged="Format_Changed"/>
                     </StackPanel>
 
                     <StackPanel Grid.Column="2" Margin="12,0,0,0">
-                        <TextBlock x:Name="QualityLabel" Text="Calidad" FontWeight="SemiBold" Foreground="{StaticResource TextSecondaryBrush}"/>
+                        <TextBlock x:Name="QualityLabel" Text="Quality" FontWeight="SemiBold" Foreground="{StaticResource TextSecondaryBrush}"/>
                         <ComboBox x:Name="QualitySelector" Margin="0,6,0,0" SelectionChanged="Quality_Changed"/>
                     </StackPanel>
                 </Grid>
 
                 <!-- Trim -->
                 <StackPanel Margin="0,12,0,0">
-                    <CheckBox x:Name="TrimOption" Content="Recortar" Height="22" Style="{StaticResource DarkCheckBox}"
+                    <CheckBox x:Name="TrimOption" Content="Trim" Height="22" Style="{StaticResource DarkCheckBox}"
                               Checked="Trim_Changed" Unchecked="Trim_Changed"/>
                     <StackPanel x:Name="TrimPanel" Visibility="Collapsed" Margin="0,8,0,0">
                         <local:RangeSlider x:Name="TrimSlider" RangeChanged="TrimSlider_RangeChanged"/>
@@ -488,15 +488,15 @@
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
                             <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="Empieza" VerticalAlignment="Center" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}"/>
-                                <TextBox x:Name="TrimStartBox" Width="74" Height="30" Margin="6,0,0,0" FontSize="13" ToolTip="Ej. 1:20 (vacío = inicio)"
+                                <TextBlock Text="Start" VerticalAlignment="Center" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                <TextBox x:Name="TrimStartBox" Width="74" Height="30" Margin="6,0,0,0" FontSize="13" ToolTip="E.g. 1:20 (empty = beginning)"
                                          LostFocus="TrimBox_Commit" KeyDown="TrimBox_KeyDown"/>
                             </StackPanel>
                             <TextBlock x:Name="TrimLengthText" Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center"
                                        FontSize="12" Foreground="{StaticResource TextSecondaryBrush}"/>
                             <StackPanel Grid.Column="2" Orientation="Horizontal">
-                                <TextBlock Text="Termina" VerticalAlignment="Center" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}"/>
-                                <TextBox x:Name="TrimEndBox" Width="74" Height="30" Margin="6,0,0,0" FontSize="13" ToolTip="Ej. 2:45 (vacío = final)"
+                                <TextBlock Text="End" VerticalAlignment="Center" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}"/>
+                                <TextBox x:Name="TrimEndBox" Width="74" Height="30" Margin="6,0,0,0" FontSize="13" ToolTip="E.g. 2:45 (empty = end)"
                                          LostFocus="TrimBox_Commit" KeyDown="TrimBox_KeyDown"/>
                             </StackPanel>
                         </Grid>
@@ -505,7 +505,7 @@
 
                 <Button x:Name="DownloadButton"
                         Margin="0,14,0,0"
-                        Content="Descargar"
+                        Content="Download"
                         Style="{StaticResource AccentButtonStyle}"
                         Click="Download_Click"/>
 
@@ -514,7 +514,7 @@
 
                 <TextBlock x:Name="EmptyHint" Margin="0,12,0,0" FontSize="12" TextAlignment="Center"
                            Foreground="{StaticResource TextSecondaryBrush}"
-                           Text="Copia un enlace y se pegará solo. Puedes añadir varios a la cola."/>
+                           Text="Copy a link and it pastes itself. You can queue several."/>
 
                 <!-- Queue -->
                 <Border x:Name="QueuePanel"
@@ -526,8 +526,8 @@
                         BorderThickness="1">
                     <DockPanel>
                         <Grid DockPanel.Dock="Top" Margin="12,8,8,4">
-                            <TextBlock Text="Descargas" FontWeight="SemiBold" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" VerticalAlignment="Center"/>
-                            <Button HorizontalAlignment="Right" Content="Limpiar terminadas" Style="{StaticResource LinkButtonStyle}" Click="ClearFinished_Click"/>
+                            <TextBlock Text="Downloads" FontWeight="SemiBold" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" VerticalAlignment="Center"/>
+                            <Button HorizontalAlignment="Right" Content="Clear finished" Style="{StaticResource LinkButtonStyle}" Click="ClearFinished_Click"/>
                         </Grid>
                         <ScrollViewer MaxHeight="230" VerticalScrollBarVisibility="Auto">
                             <ItemsControl x:Name="QueueList">
@@ -554,10 +554,10 @@
                                                                  Visibility="{Binding IsActive, Converter={StaticResource BoolToVis}}"/>
                                                 </StackPanel>
                                                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="8,0,0,0">
-                                                    <Button Content="📂" ToolTip="Mostrar archivo" Style="{StaticResource IconButtonStyle}"
+                                                    <Button Content="📂" ToolTip="Show file" Style="{StaticResource IconButtonStyle}"
                                                             Visibility="{Binding CanShowFile, Converter={StaticResource BoolToVis}}"
                                                             Click="QueueItemShow_Click"/>
-                                                    <Button Content="✕" ToolTip="Cancelar / quitar" Style="{StaticResource IconButtonStyle}"
+                                                    <Button Content="✕" ToolTip="Cancel / remove" Style="{StaticResource IconButtonStyle}"
                                                             Click="QueueItemAction_Click"/>
                                                 </StackPanel>
                                             </Grid>
@@ -576,7 +576,7 @@
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
-                    <TextBlock Text="Guardar en:" FontSize="12" VerticalAlignment="Center"
+                    <TextBlock Text="Save to:" FontSize="12" VerticalAlignment="Center"
                                Foreground="{StaticResource TextSecondaryBrush}"/>
                     <Button x:Name="ChangeFolderButton"
                             Grid.Column="1"
@@ -588,7 +588,7 @@
                     </Button>
                     <Button Grid.Column="2"
                             Width="110"
-                            Content="Abrir carpeta"
+                            Content="Open folder"
                             Style="{StaticResource SecondaryButtonStyle}"
                             Click="OpenFolder_Click"/>
                 </Grid>

@@ -64,7 +64,7 @@ internal enum QueueState
 internal sealed class QueueItem : INotifyPropertyChanged
 {
     private string title;
-    private string status = "En cola";
+    private string status = "Queued";
     private string? detail;
     private double percent;
     private bool isIndeterminate;
@@ -81,7 +81,7 @@ internal sealed class QueueItem : INotifyPropertyChanged
     public CancellationTokenSource Cancellation { get; } = new();
 
     public string? TrimLabel => Request.TrimStart.HasValue || Request.TrimEnd.HasValue
-        ? $"  ✂ {YtDlpService.FormatDuration(Request.TrimStart ?? TimeSpan.Zero)}–{(Request.TrimEnd is { } end ? YtDlpService.FormatDuration(end) : "fin")}"
+        ? $"  ✂ {YtDlpService.FormatDuration(Request.TrimStart ?? TimeSpan.Zero)}–{(Request.TrimEnd is { } end ? YtDlpService.FormatDuration(end) : "end")}"
         : null;
 
     public string Title { get => title; set => Set(ref title, value); }

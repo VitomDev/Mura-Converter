@@ -27,7 +27,7 @@ I do **not endorse** or take **any responsibility** for how others use this tool
 - Works with YouTube, TikTok, Instagram, X, Twitch, SoundCloud, Vimeo and [many more](https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md)
 - Auto-pastes copied links (on launch and when the window gets focus); drag & drop; Enter to download
 - Windows notification when a download finishes in the background
-- Explorer right-click menu: **"Descargar enlace copiado con Mura"** downloads the copied link straight into that folder, without opening the window
+- Explorer right-click menu: **"Download copied link with Mura"** downloads the copied link straight into that folder, without opening the window
 - Powered by bundled [yt-dlp](https://github.com/yt-dlp/yt-dlp) + FFmpeg, auto-updated daily so it keeps working when YouTube changes
 - MP4 prefers H.264 + AAC so files play everywhere; MKV/WebM keep the best streams as-is. No re-encoding (fast)
 - Remembers your format, quality and output folder (default `Downloads\Mura`)

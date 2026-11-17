@@ -61,7 +61,7 @@ internal static class YtDlpService
         var playlist = await list;
 
         if (video == null && playlist == null)
-            throw new InvalidOperationException("No se pudo leer el enlace.");
+            throw new InvalidOperationException("Could not read the link.");
 
         string? playlistTitle = null;
         int? playlistCount = null;
@@ -77,7 +77,7 @@ internal static class YtDlpService
         var duration = GetDouble(main, "duration");
 
         return new MediaInfo(
-            Title: GetString(main, "title") ?? playlistTitle ?? "Sin título",
+            Title: GetString(main, "title") ?? playlistTitle ?? "Untitled",
             Uploader: GetString(main, "uploader") ?? GetString(main, "channel"),
             Duration: duration is > 0 ? TimeSpan.FromSeconds(duration.Value) : null,
             ThumbnailUrl: GetString(main, "thumbnail") ?? FirstThumbnail(main),
@@ -185,7 +185,7 @@ internal static class YtDlpService
                     stream++;
                 if (p.percent.HasValue)
                     lastPercent = p.percent.Value;
-                var stage = !isAudio && stream > 0 ? "Descargando audio" : "Descargando";
+                var stage = !isAudio && stream > 0 ? "Downloading audio" : "Downloading";
                 progress?.Report(new DownloadProgress(counter + stage, p.percent, p.detail, title));
             }
             else if (line.StartsWith(TitleTag, StringComparison.Ordinal))
@@ -195,7 +195,7 @@ internal static class YtDlpService
                 counter = parts.Length == 3 && parts[0].Length > 0 && parts[1].Length > 0 ? $"{parts[0]}/{parts[1]} · " : null;
                 stream = 0;
                 lastPercent = 0;
-                progress?.Report(new DownloadProgress(counter + "Descargando", 0, null, title));
+                progress?.Report(new DownloadProgress(counter + "Downloading", 0, null, title));
             }
             else if (line.StartsWith(FileTag, StringComparison.Ordinal))
             {
@@ -205,7 +205,7 @@ internal static class YtDlpService
             else if (line.StartsWith("[Merger]") || line.StartsWith("[ExtractAudio]") ||
                      line.StartsWith("[VideoRemuxer]") || line.StartsWith("[EmbedThumbnail]"))
             {
-                var stage = isAudio ? $"Convirtiendo a {request.AudioFormat.ToString().ToUpperInvariant()}" : "Uniendo vídeo y audio";
+                var stage = isAudio ? $"Converting to {request.AudioFormat.ToString().ToUpperInvariant()}" : "Merging video and audio";
                 progress?.Report(new DownloadProgress(counter + stage, null, null, title));
             }
         }
@@ -221,7 +221,7 @@ internal static class YtDlpService
         // With --ignore-errors a playlist may finish with some failed entries; that still counts as done.
         if (lastPath == null)
         {
-            var message = errors.Count > 0 ? errors[0] : $"yt-dlp terminó con código {exitCode}.";
+            var message = errors.Count > 0 ? errors[0] : $"yt-dlp exited with code {exitCode}.";
             throw new InvalidOperationException(message);
         }
 
@@ -343,7 +343,7 @@ internal static class YtDlpService
     private static void EnsureTools()
     {
         if (!File.Exists(YtDlpPath))
-            throw new FileNotFoundException("No se encontró yt-dlp.exe. Reinstala Mura Converter.", YtDlpPath);
+            throw new FileNotFoundException("yt-dlp.exe was not found. Reinstall Mura Converter.", YtDlpPath);
     }
 
     private static async Task<int> RunAsync(

@@ -14,7 +14,7 @@ public partial class MainWindow : Window
 {
     private static readonly QualityOption[] VideoQualities =
     {
-        new(0, "Máxima disponible"),
+        new(0, "Best available"),
         new(2160, "4K (2160p)"),
         new(1440, "1440p"),
         new(1080, "1080p"),
@@ -31,7 +31,7 @@ public partial class MainWindow : Window
         new(128, "128 kbps"),
     };
 
-    private static readonly QualityOption[] LosslessQuality = { new(0, "Sin pérdida") };
+    private static readonly QualityOption[] LosslessQuality = { new(0, "Lossless") };
 
     private static readonly AudioFormat[] AudioFormats = Enum.GetValues<AudioFormat>();
     private static readonly VideoFormat[] VideoFormats = Enum.GetValues<VideoFormat>();
@@ -103,7 +103,7 @@ public partial class MainWindow : Window
         {
             if (url == null)
             {
-                notifier.Show("Mura Converter", "No hay ningún enlace copiado en el portapapeles.", isError: true);
+                notifier.Show("Mura Converter", "There is no link on the clipboard.", isError: true);
                 if (quietMode && !processing)
                     _ = CloseSoonAsync();
                 return;
@@ -112,9 +112,9 @@ public partial class MainWindow : Window
             lastClipboardUrl = url;
             Enqueue(BuildRequest(url, launch.Folder ?? settings.OutputFolder, wholePlaylist: false, null, null, launch.Kind), url);
             if (fromOtherInstance && !quietMode)
-                notifier.Show("Añadido a la cola", url);
+                notifier.Show("Added to the queue", url);
             else if (quietMode)
-                notifier.Show("Descargando con Mura…", url);
+                notifier.Show("Downloading with Mura…", url);
             return;
         }
 
@@ -177,7 +177,7 @@ public partial class MainWindow : Window
         var text = ReadClipboardUrl(anyUrl: true);
         if (text == null)
         {
-            SetHint("El portapapeles no contiene un enlace.");
+            SetHint("The clipboard does not contain a link.");
             return;
         }
 
@@ -228,7 +228,7 @@ public partial class MainWindow : Window
         previewCts = cts;
         preview = null;
         PreviewCard.Visibility = Visibility.Visible;
-        PreviewTitle.Text = "Cargando información…";
+        PreviewTitle.Text = "Loading info…";
         PreviewMeta.Text = "";
         PreviewImage.Source = null;
         PlaylistOption.Visibility = Visibility.Collapsed;
@@ -254,8 +254,8 @@ public partial class MainWindow : Window
             if (info.IsPlaylist)
             {
                 PlaylistOption.Content = info.PlaylistCount.HasValue
-                    ? $"Descargar la lista completa ({info.PlaylistCount} elementos)"
-                    : "Descargar la lista completa";
+                    ? $"Download the whole playlist ({info.PlaylistCount} items)"
+                    : "Download the whole playlist";
                 PlaylistOption.Visibility = Visibility.Visible;
                 // A bare playlist link has no single video to fall back to.
                 PlaylistOption.IsChecked = info.Duration == null;
@@ -279,7 +279,7 @@ public partial class MainWindow : Window
         {
             if (cts.IsCancellationRequested)
                 return;
-            PreviewTitle.Text = "No se pudo leer el enlace";
+            PreviewTitle.Text = "Could not read the link";
             PreviewMeta.Text = FirstLine(ex.Message);
         }
     }
@@ -321,9 +321,9 @@ public partial class MainWindow : Window
             : Array.IndexOf(VideoFormats, settings.VideoFormat);
         FormatSelector.ToolTip = isAudio ? null : settings.VideoFormat switch
         {
-            VideoFormat.Mkv => "Máxima calidad disponible, sin recodificar",
-            VideoFormat.Webm => "Formato nativo de YouTube, sin recodificar",
-            _ => "El más compatible (H.264 + AAC)",
+            VideoFormat.Mkv => "Best quality available, no re-encoding",
+            VideoFormat.Webm => "YouTube's native format, no re-encoding",
+            _ => "Most compatible (H.264 + AAC)",
         };
         loadingUi = wasLoading;
 
@@ -333,19 +333,19 @@ public partial class MainWindow : Window
         {
             options = VideoQualities;
             current = settings.VideoHeight;
-            QualityLabel.Text = "Calidad (máx.)";
+            QualityLabel.Text = "Quality (max)";
         }
         else if (SelectedAudioFormat == AudioFormat.Wav)
         {
             options = LosslessQuality;
             current = 0;
-            QualityLabel.Text = "Calidad";
+            QualityLabel.Text = "Quality";
         }
         else
         {
             options = AudioQualities;
             current = settings.AudioBitrate;
-            QualityLabel.Text = "Calidad";
+            QualityLabel.Text = "Quality";
         }
 
         loadingUi = true;
@@ -408,7 +408,7 @@ public partial class MainWindow : Window
     {
         if (!YtDlpService.TryParseTime(TrimStartBox.Text, out var start) || !YtDlpService.TryParseTime(TrimEndBox.Text, out var end))
         {
-            SetHint("Tiempo no válido. Usa por ejemplo 1:20 o 1:02:30.");
+            SetHint("Invalid time. Use, for example, 1:20 or 1:02:30.");
             return;
         }
         SetHint(null);
@@ -437,7 +437,7 @@ public partial class MainWindow : Window
     {
         if (YtDlpService.TryParseTime(TrimStartBox.Text, out var start) && YtDlpService.TryParseTime(TrimEndBox.Text, out var end)
             && (end ?? trimDuration) is { } stop && stop > (start ?? TimeSpan.Zero))
-            TrimLengthText.Text = "Duración: " + YtDlpService.FormatDuration(stop - (start ?? TimeSpan.Zero));
+            TrimLengthText.Text = "Length: " + YtDlpService.FormatDuration(stop - (start ?? TimeSpan.Zero));
         else
             TrimLengthText.Text = "";
     }
@@ -451,7 +451,7 @@ public partial class MainWindow : Window
         var url = UrlBox.Text.Trim();
         if (!YtDlpService.LooksLikeUrl(url))
         {
-            SetHint("Pega un enlace válido.");
+            SetHint("Paste a valid link.");
             SystemSounds.Hand.Play();
             return;
         }
@@ -461,12 +461,12 @@ public partial class MainWindow : Window
         {
             if (!YtDlpService.TryParseTime(TrimStartBox.Text, out start) || !YtDlpService.TryParseTime(TrimEndBox.Text, out end))
             {
-                SetHint("Tiempo no válido. Usa por ejemplo 1:20 o 1:02:30.");
+                SetHint("Invalid time. Use, for example, 1:20 or 1:02:30.");
                 return;
             }
             if (start.HasValue && end.HasValue && end <= start)
             {
-                SetHint("El final del recorte debe ser posterior al inicio.");
+                SetHint("The end of the trim must be after the start.");
                 return;
             }
             // A range covering the whole media is no trim at all.
@@ -520,7 +520,7 @@ public partial class MainWindow : Window
             // Don't race the self-update replacing yt-dlp.exe.
             if (updateTask is { IsCompleted: false })
             {
-                SetHint("Actualizando el motor de descarga…");
+                SetHint("Updating the download engine…");
                 await updateTask;
                 SetHint(null);
             }
@@ -540,7 +540,7 @@ public partial class MainWindow : Window
     private async Task RunItemAsync(QueueItem item)
     {
         item.State = QueueState.Running;
-        item.Status = "Preparando…";
+        item.Status = "Preparing…";
         item.IsIndeterminate = true;
 
         var progress = new Progress<DownloadProgress>(p =>
@@ -563,10 +563,10 @@ public partial class MainWindow : Window
             item.State = QueueState.Done;
             item.IsIndeterminate = false;
             item.Percent = 100;
-            item.Status = "✓ Completado";
+            item.Status = "✓ Done";
             item.Detail = item.Request.WholePlaylist ? Path.GetDirectoryName(path) : Path.GetFileName(path);
             if (!IsActive)
-                notifier.Show("✓ Descarga completada", item.Request.WholePlaylist ? item.Title : Path.GetFileName(path));
+                notifier.Show("✓ Download complete", item.Request.WholePlaylist ? item.Title : Path.GetFileName(path));
             SystemSounds.Asterisk.Play();
         }
         catch (OperationCanceledException)
@@ -574,7 +574,7 @@ public partial class MainWindow : Window
             item.State = QueueState.Canceled;
             item.IsIndeterminate = false;
             item.Percent = 0;
-            item.Status = "Cancelada";
+            item.Status = "Canceled";
             item.Detail = null;
         }
         catch (Exception ex)
@@ -585,7 +585,7 @@ public partial class MainWindow : Window
             item.Status = "Error";
             item.Detail = FirstLine(ex.Message);
             if (!IsActive)
-                notifier.Show("Error en la descarga", item.Title, isError: true);
+                notifier.Show("Download failed", item.Title, isError: true);
             SystemSounds.Hand.Play();
         }
     }
@@ -651,7 +651,7 @@ public partial class MainWindow : Window
     {
         var dialog = new OpenFolderDialog
         {
-            Title = "Carpeta de descargas",
+            Title = "Download folder",
             InitialDirectory = Directory.Exists(settings.OutputFolder) ? settings.OutputFolder : null,
         };
 
@@ -694,7 +694,7 @@ public partial class MainWindow : Window
     {
         var active = queue.Count(i => i.IsActive);
         if (active > 0 && !quietMode &&
-            MessageBox.Show(this, $"Hay {active} descarga(s) en curso o en cola. ¿Cerrar y cancelarlas?",
+            MessageBox.Show(this, $"{active} download(s) in progress or queued. Close and cancel them?",
                 "Mura Converter", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
         {
             e.Cancel = true;
