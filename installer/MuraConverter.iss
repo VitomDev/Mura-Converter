@@ -1,6 +1,6 @@
 ﻿; Inno Setup script for Mura Converter. Built by build.ps1.
 #define AppName "Mura Converter"
-#define AppVersion "2.3.0"
+#define AppVersion "2.3.1"
 #define AppExe "MuraConverter.exe"
 
 [Setup]
@@ -39,6 +39,10 @@ Root: HKCU; Subkey: "Software\Classes\Directory\Background\shell\MuraConverter\c
 Root: HKCU; Subkey: "Software\Classes\Directory\shell\MuraConverter"; ValueType: string; ValueName: ""; ValueData: "Download copied link here with Mura"; Flags: uninsdeletekey; Tasks: contextmenu
 Root: HKCU; Subkey: "Software\Classes\Directory\shell\MuraConverter"; ValueType: string; ValueName: "Icon"; ValueData: "{app}\{#AppExe}"; Tasks: contextmenu
 Root: HKCU; Subkey: "Software\Classes\Directory\shell\MuraConverter\command"; ValueType: string; ValueName: ""; ValueData: """{app}\{#AppExe}"" --clipboard --dir ""%1"""; Tasks: contextmenu
+
+[Messages]
+; Shown above the license on the wizard's license page.
+LicenseLabel3=Mura is free and open source. If you paid for it, you were scammed: the official download is only at github.com/VitomDev. Please read the license below and accept it to continue.
 
 [Files]
 Source: "..\publish\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
